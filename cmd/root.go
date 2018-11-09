@@ -3,6 +3,8 @@ package cmd
 import (
 	"time"
 
+	"github.com/subtlepseudonym/notes/cmd"
+
 	"github.com/spf13/cobra"
 )
 
