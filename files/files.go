@@ -11,6 +11,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// Version is set at build time using '--ldflags "-X main.version=$(git describe --abbrev=0)"'
+var Version = "v0.1.0"
+
 const (
 	defaultNotesDir     = ".notes"
 	defaultMetaFilename = "meta"
@@ -38,8 +41,8 @@ type Note struct {
 	Body string
 }
 
-// getNotesDir returns the path to the default directory containing notes files
-func getNotesDir() (string, error) { // FIXME: don't use default
+// getNotesDirPath returns the path to the default directory containing notes files
+func getNotesDirPath() (string, error) { // FIXME: don't use default
 	home, err := homedir.Dir()
 	if err != nil {
 		return "", errors.Wrap(err, "get home directory failed")
@@ -48,9 +51,43 @@ func getNotesDir() (string, error) { // FIXME: don't use default
 	return path.Join(home, defaultNotesDir), nil
 }
 
+// BuildNewMeta creates a new, empty meta object with just only the Version field
+// specified and writes it to the notes directory
+func BuildNewMeta() (meta, error) {
+	notesDir, err := getNotesDirPath()
+	if err != nil {
+		return meta{}, errors.Wrap(err, "get meta dir failed")
+	}
+
+	if _, err = os.Stat(notesDir); os.IsNotExist(err) {
+		err = os.Mkdir(notesDir, os.ModeDir|os.FileMode(0700))
+		if err != nil {
+			return meta{}, errors.Wrap(err, "create notes directory failed")
+		}
+	}
+
+	metaPath := path.Join(notesDir, defaultMetaFilename)
+	f, err := os.Create(metaPath)
+	if err != nil {
+		return meta{}, errors.Wrap(err, "create meta file failed")
+	}
+
+	encoder := gob.NewEncoder(f)
+
+	m := meta{
+		Version: Version,
+	}
+	err = encoder.Encode(&m)
+	if err != nil {
+		return meta{}, errors.Wrap(err, "encode meta object failed")
+	}
+
+	return m, nil
+}
+
 // GetMeta reads the meta object from the notes directory and returns it
 func GetMeta() (meta, error) {
-	notesDir, err := getNotesDir()
+	notesDir, err := getNotesDirPath()
 	if err != nil {
 		return meta{}, errors.Wrap(err, "get meta dir failed")
 	}
@@ -74,7 +111,7 @@ func GetMeta() (meta, error) {
 
 // GetNote reads a Note struct from the notes directory given by the id argument
 func GetNote(id int) (Note, error) {
-	notesDir, err := getNotesDir()
+	notesDir, err := getNotesDirPath()
 	if err != nil {
 		return Note{}, errors.Wrap(err, "get notes dir failed")
 	}

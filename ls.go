@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -40,7 +41,12 @@ var ls = cli.Command{
 
 func lsAction(ctx *cli.Context) error {
 	meta, err := files.GetMeta()
-	if err != nil {
+	if os.IsNotExist(errors.Cause(err)) {
+		meta, err = files.BuildNewMeta()
+		if err != nil {
+			return cli.NewExitError(errors.Wrap(err, "build new meta failed").Error(), 1)
+		}
+	} else if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get meta failed").Error(), 1)
 	}
 
