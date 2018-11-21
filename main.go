@@ -1,67 +1,46 @@
 package main
 
 import (
-	// "encoding/json"
-	// "fmt"
-	// "io/ioutil"
-	// "os"
+	"fmt"
+	"os"
 
-	"github.com/subtlepseudonym/notes/cmd"
+	"github.com/urfave/cli"
 )
 
-const (
-	notesDir       = "/Users/cdemille/workspace/log"
-	filenameFormat = "%d.log"
-)
-
-type globalMeta struct {
-	NumNotes  int `json:"numNotes"`
-	IDCounter int `json:"idCounter"`
-}
-
-type noteMeta struct {
-	Title    string `json:"title"`
-	Created  int    `json:"created"`
-	Modified int    `json:"modified"`
-}
-
-type note struct {
-	Created int    `json:"created"`
-	Title   string `json:"title"`
-	Body    string `json:"body"`
-}
+// version is set at build time using '--ldflags "-X main.version=$(git describe --abbrev=0)"'
+var version = "v0.1.0"
 
 func main() {
-	// f, err := os.Open(fmt.Sprintf("%s/meta.log", notesDir))
-	// if err != nil {
-	// 	panic(err)
-	// }
+	os.Setenv("_CLI_ZSH_AUTOCOMPLETE_HACK", "1")
 
-	// decoder := json.NewDecoder(f)
+	app := cli.NewApp()
 
-	// var global globalMeta
-	// err = decoder.Decode(&global)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Printf("global meta: %+v\n", global)
+	app.Usage = "write and organize notes"
+	app.Description = "notes is intended to make it easy to jot down stream of consciousness notes while working in the command line and automatically back those notes up to a remote server"
 
-	// var meta []noteMeta
-	// err = decoder.Decode(&meta)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// for _, note := range meta {
-	// 	fmt.Printf("%+v\n", note)
-	// }
+	app.Version = version
+	app.Authors = []cli.Author{
+		cli.Author{
+			Name:  "Connor Demille",
+			Email: "subtlepseudonym@gmail.com",
+		},
+	}
 
-	// files, err := ioutil.ReadDir(notesDir)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// for _, f := range files {
-	// 	fmt.Printf("%d\t| %d\t| %s\n", f.Size(), f.ModTime().Unix(), f.Name())
-	// }
+	app.EnableBashCompletion = true
+	app.ErrWriter = os.Stderr
 
-	cmd.Execute()
+	app.Commands = []cli.Command{
+		ls,
+	}
+
+	app.CommandNotFound = func(ctx *cli.Context, cmd string) {
+		fmt.Fprintf(ctx.App.ErrWriter, "command %q not found", cmd)
+		os.Exit(1)
+	}
+
+	err := app.Run(os.Args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "runtime error: %s", err)
+		os.Exit(1)
+	}
 }
