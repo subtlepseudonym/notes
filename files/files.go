@@ -94,7 +94,7 @@ func GetMeta() (meta, error) {
 
 	metaPath := path.Join(notesDir, defaultMetaFilename) // FIXME: don't use default
 	f, err := os.Open(metaPath)
-	if err != nil {
+	if err != nil { // TODO: create notes dir / meta file here rather than in lsBeforeFunc(...)
 		return meta{}, errors.Wrap(err, "open meta file failed")
 	}
 
@@ -117,7 +117,7 @@ func GetNote(id int) (Note, error) {
 	}
 
 	notePath := path.Join(notesDir, fmt.Sprintf("%06d", id))
-	f, err := os.Open(notePath)
+	f, err := os.Open(notePath) // TODO: create this file if it doesn't exist
 	if err != nil {
 		return Note{}, errors.Wrap(err, "open note file failed")
 	}
