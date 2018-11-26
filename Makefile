@@ -3,7 +3,8 @@ GOBINARY=notes
 all: test build
 
 build:
-	go build -o $(GOBINARY) -v
+	go fmt -x ./...
+	go build -o $(GOBINARY) -v ./cmd/notes
 
 test:
 	gotest --race -v ./...
