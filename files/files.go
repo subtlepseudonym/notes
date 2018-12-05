@@ -9,6 +9,7 @@ import (
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
+	"github.com/satori/go.uuid"
 )
 
 const (
@@ -114,18 +115,57 @@ func GetNote(id int) (Note, error) {
 	}
 
 	notePath := path.Join(notesDir, fmt.Sprintf("%06d", id))
-	f, err := os.Open(notePath) // TODO: create this file if it doesn't exist
+	f, err := os.Open(notePath)
 	if err != nil {
 		return Note{}, errors.Wrap(err, "open note file failed")
 	}
 
-	decoder := gob.NewDecoder(f)
-
 	var n Note
-	err = decoder.Decode(&n)
+	err = gob.NewDecoder(f).Decode(&n)
 	if err != nil {
 		return Note{}, errors.Wrap(err, "decode note object failed")
 	}
 
 	return n, nil
+}
+
+// AddNote drops the user into vim, reads the buffer, and saves the content as
+// the body of a new note object
+// FIXME: don't lose note content on error
+func AddNote(title string) (Note, error) {
+	notesDir, err := getNotesDirPath()
+	if err != nil {
+		return Note{}, errors.Wrap(err, "get notes dir failed")
+	}
+
+	creationTime := time.Now()
+
+	// TODO: open tmp file in vim, save contents to object, print gob to file
+
+	notePath := path.Join(notesDir, fmt.Sprintf("%06d", id))
+	f, err := os.Create(notePath)
+	if err != nil {
+		return Note{}, errors.Wrap(err, "create note file failed")
+	}
+
+	noteID, err := uuid.NewV4()
+	if err != nil {
+		return Note{}, errors.Wrap(err, "create note ID failed")
+	}
+
+	note := Note{
+		Meta: NoteMeta{
+			ID:       noteID.String(),
+			Title:    title,
+			Created:  creationTime,
+			Modified: time.Now(),
+		},
+		Body: body,
+	}
+
+	err = gob.NewEncoder(f).Encode(note)
+	if err != nil {
+		return Note{}, errors.Wrap(err, "encode note object failed")
+	}
+	return note, nil
 }
