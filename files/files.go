@@ -11,9 +11,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Version is set at build time using '--ldflags "-X main.version=$(git describe --abbrev=0)"'
-var Version = "v0.1.0"
-
 const (
 	defaultNotesDir     = ".notes"
 	defaultMetaFilename = "meta"
@@ -51,9 +48,9 @@ func getNotesDirPath() (string, error) { // FIXME: don't use default
 	return path.Join(home, defaultNotesDir), nil
 }
 
-// BuildNewMeta creates a new, empty meta object with just only the Version field
+// BuildNewMeta creates a new, empty meta object with only the Version field
 // specified and writes it to the notes directory
-func BuildNewMeta() (meta, error) {
+func BuildNewMeta(version string) (meta, error) {
 	notesDir, err := getNotesDirPath()
 	if err != nil {
 		return meta{}, errors.Wrap(err, "get meta dir failed")
@@ -75,7 +72,7 @@ func BuildNewMeta() (meta, error) {
 	encoder := gob.NewEncoder(f)
 
 	m := meta{
-		Version: Version,
+		Version: version,
 	}
 	err = encoder.Encode(&m)
 	if err != nil {

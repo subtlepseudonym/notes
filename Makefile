@@ -1,10 +1,12 @@
-GOBINARY=notes
+BINARY=notes
+VERSION=`git describe --abbrev=0`
+LDFLAGS=--ldflags "-X main.Version=${VERSION}"
 
 all: test build
 
 build:
 	go fmt -x ./...
-	go build -o $(GOBINARY) -v ./cmd/notes
+	go build ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
 
 test:
 	gotest --race -v ./...
