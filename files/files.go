@@ -3,18 +3,20 @@ package files
 import (
 	"encoding/gob"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"time"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
-	"github.com/satori/go.uuid"
 )
 
 const (
-	defaultNotesDir     = ".notes"
 	defaultMetaFilename = "meta"
+	defaultNotesDir     = ".notes"
+	defaultEditor       = "vim"
 )
 
 // meta holds meta information for the local notes storage as a whole
@@ -83,7 +85,7 @@ func BuildNewMeta(version string) (meta, error) {
 	return m, nil
 }
 
-// GetMeta reads the meta object from the notes directory and returns it
+// GetMeta retrieves global meta info from file
 func GetMeta() (meta, error) {
 	notesDir, err := getNotesDirPath()
 	if err != nil {
@@ -107,7 +109,7 @@ func GetMeta() (meta, error) {
 	return m, nil
 }
 
-// GetNote reads a Note struct from the notes directory given by the id argument
+// GetNote retrieves a note from file by ID
 func GetNote(id int) (Note, error) {
 	notesDir, err := getNotesDirPath()
 	if err != nil {
@@ -129,43 +131,49 @@ func GetNote(id int) (Note, error) {
 	return n, nil
 }
 
-// AddNote drops the user into vim, reads the buffer, and saves the content as
-// the body of a new note object
-// FIXME: don't lose note content on error
-func AddNote(title string) (Note, error) {
+// SaveNote saves the provided note to file
+func SaveNote(note Note) error {
 	notesDir, err := getNotesDirPath()
 	if err != nil {
-		return Note{}, errors.Wrap(err, "get notes dir failed")
+		return errors.Wrap(err, "get notes dir failed")
 	}
 
-	creationTime := time.Now()
-
-	// TODO: open tmp file in vim, save contents to object, print gob to file
-
-	notePath := path.Join(notesDir, fmt.Sprintf("%06d", id))
-	f, err := os.Create(notePath)
+	notePath := path.Join(notesDir, fmt.Sprintf("%06d", note.Meta.ID))
+	noteFile, err := os.Create(notePath)
 	if err != nil {
-		return Note{}, errors.Wrap(err, "create note file failed")
+		return errors.Wrap(err, "create note file failed")
 	}
 
-	noteID, err := uuid.NewV4()
+	err = gob.NewEncoder(noteFile).Encode(note)
 	if err != nil {
-		return Note{}, errors.Wrap(err, "create note ID failed")
+		return errors.Wrap(err, "encode note object failed")
 	}
 
-	note := Note{
-		Meta: NoteMeta{
-			ID:       noteID.String(),
-			Title:    title,
-			Created:  creationTime,
-			Modified: time.Now(),
-		},
-		Body: body,
-	}
+	return nil
+}
 
-	err = gob.NewEncoder(f).Encode(note)
+// GetNoteBodyFromUser drops the user into the provided editor command before
+// retrieving the contents of the edited file
+func GetNoteBodyFromUser(editor string) (string, error) {
+	tempFile, err := ioutil.TempFile("", "note")
 	if err != nil {
-		return Note{}, errors.Wrap(err, "encode note object failed")
+		return "", errors.Wrap(err, "create temporary file failed")
 	}
-	return note, nil
+	defer tempFile.Close()
+
+	cmd := exec.Command(editor, tempFile.Name())
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+
+	err = cmd.Run()
+	if err != nil {
+		return "", errors.Wrap(err, "run editor command failed")
+	}
+
+	bodyBytes, err := ioutil.ReadAll(tempFile)
+	if err != nil {
+		return "", errors.Wrap(err, "read temporary file failed")
+	}
+
+	return string(bodyBytes), errors.Wrap(tempFile.Close(), "close temporary file failed")
 }
