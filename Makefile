@@ -4,8 +4,7 @@ LDFLAGS=--ldflags "-X main.Version=${VERSION}"
 
 all: test build
 
-build:
-	go fmt -x ./...
+build: format
 	go build ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
 
 test:

@@ -51,9 +51,9 @@ func getNotesDirPath() (string, error) { // FIXME: don't use default
 	return path.Join(home, defaultNotesDir), nil
 }
 
-// BuildNewMeta creates a new, empty meta object with only the Version field
+// buildNewMeta creates a new, empty meta object with only the Version field
 // specified and writes it to the notes directory
-func BuildNewMeta(version string) (meta, error) {
+func buildNewMeta(version string) (meta, error) {
 	notesDir, err := getNotesDirPath()
 	if err != nil {
 		return meta{}, errors.Wrap(err, "get meta dir failed")
@@ -82,11 +82,12 @@ func BuildNewMeta(version string) (meta, error) {
 		return meta{}, errors.Wrap(err, "encode meta object failed")
 	}
 
+	// TODO: log that this function was called
 	return m, nil
 }
 
 // GetMeta retrieves global meta info from file
-func GetMeta() (meta, error) {
+func GetMeta(version string) (meta, error) {
 	notesDir, err := getNotesDirPath()
 	if err != nil {
 		return meta{}, errors.Wrap(err, "get meta dir failed")
@@ -95,7 +96,8 @@ func GetMeta() (meta, error) {
 	metaPath := path.Join(notesDir, defaultMetaFilename) // FIXME: don't use default
 	f, err := os.Open(metaPath)
 	if err != nil { // TODO: create notes dir / meta file here rather than in lsBeforeFunc(...)
-		return meta{}, errors.Wrap(err, "open meta file failed")
+		return buildNewMeta(version)
+		// return meta{}, errors.Wrap(err, "open meta file failed")
 	}
 
 	decoder := gob.NewDecoder(f)

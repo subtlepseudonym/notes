@@ -39,7 +39,7 @@ var ls = cli.Command{
 }
 
 func lsAction(ctx *cli.Context) error {
-	meta, err := files.GetMeta()
+	meta, err := files.GetMeta(ctx.App.Version)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get meta failed").Error(), 1)
 	}
