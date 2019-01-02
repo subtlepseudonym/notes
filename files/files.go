@@ -1,7 +1,7 @@
 package files
 
 import (
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -21,24 +21,24 @@ const (
 
 // meta holds meta information for the local notes storage as a whole
 type meta struct {
-	Version string
-	Notes   []NoteMeta
+	Version string     `json:"version"`
+	Notes   []NoteMeta `json:"notes"`
 }
 
 // NoteMeta holds meta information for one note to make commands that only access
 // meta information perform faster
 type NoteMeta struct {
-	ID      int // incremented starting at 1
-	Title   string
-	Created time.Time
-	Deleted time.Time
+	ID      int       `json:"id"` // incremented starting at 1
+	Title   string    `json:"title"`
+	Created time.Time `json:"created"`
+	Deleted time.Time `json:"deleted"`
 }
 
 // Note includes the content of the note as well as its meta information as backup in
 // case we need to recreate the meta file from scratch
 type Note struct {
-	Meta NoteMeta
-	Body string
+	Meta NoteMeta `json:"meta"`
+	Body string   `json:"body"`
 }
 
 // getNotesDirPath returns the path to the default directory containing notes files
@@ -72,7 +72,7 @@ func buildNewMeta(version string) (meta, error) {
 		return meta{}, errors.Wrap(err, "create meta file failed")
 	}
 
-	encoder := gob.NewEncoder(f)
+	encoder := json.NewEncoder(f)
 
 	m := meta{
 		Version: version,
@@ -100,7 +100,7 @@ func GetMeta(version string) (meta, error) {
 		// return meta{}, errors.Wrap(err, "open meta file failed")
 	}
 
-	decoder := gob.NewDecoder(f)
+	decoder := json.NewDecoder(f)
 
 	var m meta
 	err = decoder.Decode(&m)
@@ -125,7 +125,7 @@ func GetNote(id int) (Note, error) {
 	}
 
 	var n Note
-	err = gob.NewDecoder(f).Decode(&n)
+	err = json.NewDecoder(f).Decode(&n)
 	if err != nil {
 		return Note{}, errors.Wrap(err, "decode note object failed")
 	}
@@ -146,7 +146,7 @@ func SaveNote(note Note) error {
 		return errors.Wrap(err, "create note file failed")
 	}
 
-	err = gob.NewEncoder(noteFile).Encode(note)
+	err = json.NewEncoder(noteFile).Encode(note)
 	if err != nil {
 		return errors.Wrap(err, "encode note object failed")
 	}
