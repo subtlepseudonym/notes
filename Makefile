@@ -1,6 +1,6 @@
 BINARY=notes
 VERSION=`git describe --abbrev=0`
-LDFLAGS=--ldflags "-X main.Version=${VERSION}"
+LDFLAGS=--ldflags "-X github.com/subtlepseudonym/notes.Version=${VERSION}"
 
 all: test build
 
