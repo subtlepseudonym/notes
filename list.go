@@ -14,13 +14,13 @@ import (
 const (
 	defaultListSize       = 10
 	defaultListTimeFormat = time.RFC822
-	defaultListDelimiter  = "|"
+	defaultListDelimiter  = " | "
 )
 
 // ListOptions defines the set of options for modifying the behavior
-// of the ls command
+// note listing
 type ListOptions struct {
-	ShowAll     bool
+	ShowAll     bool // this option overrides ListSize
 	LongFormat  bool
 	ShowDeleted bool
 
@@ -44,13 +44,14 @@ func List(output io.Writer, options ListOptions) error {
 
 	idFormat := fmt.Sprintf("%% %dx", len(meta.Notes)+1)
 
-	var fields []string
 	var listed int
 	idx := len(meta.Notes) - 1
 
 	for listed < limit && idx >= 0 {
 		note := meta.Notes[idx]
+		idx--
 
+		var fields []string
 		fields = append(fields, fmt.Sprintf(idFormat, note.ID))
 
 		if options.ShowDeleted {
@@ -59,6 +60,8 @@ func List(output io.Writer, options ListOptions) error {
 			} else {
 				fields = append(fields, "d")
 			}
+		} else if time.Unix(0, 0).UTC().Equal(note.Deleted.UTC()) {
+			continue
 		}
 
 		if options.LongFormat {
@@ -76,6 +79,7 @@ func List(output io.Writer, options ListOptions) error {
 			delimiter = options.ListDelimiter
 		}
 		fmt.Fprintln(output, strings.Join(fields, delimiter))
+		listed++
 	}
 
 	return nil
