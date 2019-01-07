@@ -14,13 +14,14 @@ import (
 )
 
 const (
-	defaultMetaFilename = "meta"
-	defaultNotesDir     = ".notes"
-	defaultEditor       = "vim"
+	defaultMetaFilename       = "meta"
+	defaultNotesDir           = ".notes"
+	defaultEditor             = "vim"
+	defaultNoteFilenameFormat = "%06d"
 )
 
-// meta holds meta information for the local notes storage as a whole
-type meta struct {
+// Meta holds meta information for the local notes storage as a whole
+type Meta struct {
 	Version string     `json:"version"`
 	Notes   []NoteMeta `json:"notes"`
 }
@@ -53,33 +54,33 @@ func getNotesDirPath() (string, error) { // FIXME: don't use default
 
 // buildNewMeta creates a new, empty meta object with only the Version field
 // specified and writes it to the notes directory
-func buildNewMeta(version string) (meta, error) {
+func buildNewMeta(version string) (Meta, error) {
 	notesDir, err := getNotesDirPath()
 	if err != nil {
-		return meta{}, errors.Wrap(err, "get meta dir failed")
+		return Meta{}, errors.Wrap(err, "get meta dir failed")
 	}
 
 	if _, err = os.Stat(notesDir); os.IsNotExist(err) {
 		err = os.Mkdir(notesDir, os.ModeDir|os.FileMode(0700))
 		if err != nil {
-			return meta{}, errors.Wrap(err, "create notes directory failed")
+			return Meta{}, errors.Wrap(err, "create notes directory failed")
 		}
 	}
 
 	metaPath := path.Join(notesDir, defaultMetaFilename)
 	f, err := os.Create(metaPath)
 	if err != nil {
-		return meta{}, errors.Wrap(err, "create meta file failed")
+		return Meta{}, errors.Wrap(err, "create meta file failed")
+	}
+
+	m := Meta{
+		Version: version,
 	}
 
 	encoder := json.NewEncoder(f)
-
-	m := meta{
-		Version: version,
-	}
 	err = encoder.Encode(&m)
 	if err != nil {
-		return meta{}, errors.Wrap(err, "encode meta object failed")
+		return Meta{}, errors.Wrap(err, "encode meta object failed")
 	}
 
 	// TODO: log that this function was called
@@ -87,28 +88,58 @@ func buildNewMeta(version string) (meta, error) {
 }
 
 // GetMeta retrieves global meta info from file
-func GetMeta(version string) (meta, error) {
+func GetMeta(version string) (Meta, error) {
 	notesDir, err := getNotesDirPath()
 	if err != nil {
-		return meta{}, errors.Wrap(err, "get meta dir failed")
+		return Meta{}, errors.Wrap(err, "get meta dir failed")
 	}
 
 	metaPath := path.Join(notesDir, defaultMetaFilename) // FIXME: don't use default
 	f, err := os.Open(metaPath)
-	if err != nil { // TODO: create notes dir / meta file here rather than in lsBeforeFunc(...)
+	if err != nil {
 		return buildNewMeta(version)
-		// return meta{}, errors.Wrap(err, "open meta file failed")
 	}
 
 	decoder := json.NewDecoder(f)
 
-	var m meta
+	var m Meta
 	err = decoder.Decode(&m)
 	if err != nil {
-		return meta{}, errors.Wrap(err, "decode meta object failed")
+		return Meta{}, errors.Wrap(err, "decode meta object failed")
 	}
 
 	return m, nil
+}
+
+// SaveMeta saves the provided meta to file
+func SaveMeta(meta Meta) error {
+	notesDir, err := getNotesDirPath()
+	if err != nil {
+		return errors.Wrap(err, "get meta dir failed")
+	}
+
+	metaPath := path.Join(notesDir, defaultMetaFilename) // FIXME: don't use default
+	err = os.Rename(metaPath, metaPath+".bak")
+	if err != nil {
+		return errors.Wrap(err, "backup old meta failed")
+	}
+
+	metaFile, err := os.Create(metaPath)
+	if err != nil {
+		err = os.Rename(metaPath+".bak", metaPath)
+		if err != nil {
+			return errors.Wrap(err, "restoring meta backup failed")
+		}
+		return errors.Wrap(err, "create meta file failed")
+	}
+
+	err = json.NewEncoder(metaFile).Encode(meta)
+	if err != nil {
+		os.Remove(metaPath) // FIXME: this could return a path error
+		return errors.Wrap(err, "encode meta object failed")
+	}
+
+	return nil
 }
 
 // GetNote retrieves a note from file by ID
@@ -118,7 +149,7 @@ func GetNote(id int) (Note, error) {
 		return Note{}, errors.Wrap(err, "get notes dir failed")
 	}
 
-	notePath := path.Join(notesDir, fmt.Sprintf("%06d", id))
+	notePath := path.Join(notesDir, fmt.Sprintf(defaultNoteFilenameFormat, id))
 	f, err := os.Open(notePath)
 	if err != nil {
 		return Note{}, errors.Wrap(err, "open note file failed")
@@ -140,7 +171,7 @@ func SaveNote(note Note) error {
 		return errors.Wrap(err, "get notes dir failed")
 	}
 
-	notePath := path.Join(notesDir, fmt.Sprintf("%06d", note.Meta.ID))
+	notePath := path.Join(notesDir, fmt.Sprintf(defaultNoteFilenameFormat, note.Meta.ID))
 	noteFile, err := os.Create(notePath)
 	if err != nil {
 		return errors.Wrap(err, "create note file failed")
@@ -148,6 +179,7 @@ func SaveNote(note Note) error {
 
 	err = json.NewEncoder(noteFile).Encode(note)
 	if err != nil {
+		os.Remove(notePath) // FIXME: this could return a path error (extremely unlikely though)
 		return errors.Wrap(err, "encode note object failed")
 	}
 
