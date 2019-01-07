@@ -30,6 +30,7 @@ func main() {
 
 	app.Commands = []cli.Command{
 		ls,
+		newNote,
 	}
 
 	app.CommandNotFound = func(ctx *cli.Context, cmd string) {
