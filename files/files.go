@@ -22,8 +22,9 @@ const (
 
 // Meta holds meta information for the local notes storage as a whole
 type Meta struct {
-	Version string     `json:"version"`
-	Notes   []NoteMeta `json:"notes"`
+	Version  string           `json:"version"`
+	LatestID int              `json:"latestId"`
+	Notes    map[int]NoteMeta `json:"notes"` // maps note ID to NoteMeta
 }
 
 // NoteMeta holds meta information for one note to make commands that only access
@@ -75,6 +76,7 @@ func buildNewMeta(version string) (Meta, error) {
 
 	m := Meta{
 		Version: version,
+		Notes:   make(map[int]NoteMeta),
 	}
 
 	encoder := json.NewEncoder(f)

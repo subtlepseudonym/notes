@@ -45,11 +45,14 @@ func List(output io.Writer, options ListOptions) error {
 	idFormat := fmt.Sprintf("%% %dx", len(meta.Notes)+1)
 
 	var listed int
-	idx := len(meta.Notes) - 1
+	idx := meta.LatestID
 
 	for listed < limit && idx >= 0 {
-		note := meta.Notes[idx]
+		note, exists := meta.Notes[idx]
 		idx--
+		if !exists {
+			continue
+		}
 
 		var fields []string
 		fields = append(fields, fmt.Sprintf(idFormat, note.ID))

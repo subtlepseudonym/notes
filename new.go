@@ -32,7 +32,7 @@ func NewNote(options NoteOptions) (*files.Note, error) {
 
 	newNoteID := 1
 	if len(meta.Notes) > 0 {
-		newNoteID = meta.Notes[len(meta.Notes)-1].ID + 1
+		newNoteID = meta.LatestID + 1
 	}
 
 	var title string
@@ -56,7 +56,13 @@ func NewNote(options NoteOptions) (*files.Note, error) {
 		return nil, errors.Wrap(err, "save note failed")
 	}
 
-	meta.Notes = append(meta.Notes, note.Meta)
+	_, exists := meta.Notes[note.Meta.ID]
+	if exists {
+		return nil, errors.New("note ID is not unique")
+	}
+
+	meta.Notes[note.Meta.ID] = note.Meta
+	meta.LatestID = note.Meta.ID
 	err = files.SaveMeta(meta)
 	if err != nil {
 		return nil, errors.Wrap(err, "save meta failed")
