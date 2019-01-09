@@ -198,6 +198,21 @@ func SaveNote(note Note) error {
 	return nil
 }
 
+// RemoveNote removes a note from disk
+func RemoveNote(id int) error {
+	notePath, err := getNoteFilename(id)
+	if err != nil {
+		return errors.Wrap(err, "get note filename failed")
+	}
+
+	err = os.Remove(notePath)
+	if err != nil {
+		return errors.Wrap(err, "remove note file failed")
+	}
+
+	return nil
+}
+
 // GetNoteBodyFromUser drops the user into the provided editor command before
 // retrieving the contents of the edited file
 func GetNoteBodyFromUser(editor string) (string, error) {
