@@ -96,6 +96,7 @@ func GetMeta(version string) (Meta, error) {
 		return Meta{}, errors.Wrap(err, "get meta dir failed")
 	}
 
+	// TODO: decide if we care about customizing the meta file name
 	metaPath := path.Join(notesDir, defaultMetaFilename) // FIXME: don't use default
 	f, err := os.Open(metaPath)
 	if err != nil {
@@ -144,14 +145,24 @@ func SaveMeta(meta Meta) error {
 	return nil
 }
 
-// GetNote retrieves a note from file by ID
-func GetNote(id int) (Note, error) {
+func getNoteFilename(id int) (string, error) {
 	notesDir, err := getNotesDirPath()
 	if err != nil {
-		return Note{}, errors.Wrap(err, "get notes dir failed")
+		return "", errors.Wrap(err, "get notes dir failed")
 	}
 
-	notePath := path.Join(notesDir, fmt.Sprintf(defaultNoteFilenameFormat, id))
+	// FIXME: don't use default note filename format
+	// TODO: can we validate a provided string format?
+	return path.Join(notesDir, fmt.Sprintf(defaultNoteFilenameFormat, id)), nil
+}
+
+// GetNote retrieves a note from file by ID
+func GetNote(id int) (Note, error) {
+	notePath, err := getNoteFilename(id)
+	if err != nil {
+		return Note{}, errors.Wrap(err, "get note filename failed")
+	}
+
 	f, err := os.Open(notePath)
 	if err != nil {
 		return Note{}, errors.Wrap(err, "open note file failed")
@@ -168,12 +179,11 @@ func GetNote(id int) (Note, error) {
 
 // SaveNote saves the provided note to file
 func SaveNote(note Note) error {
-	notesDir, err := getNotesDirPath()
+	notePath, err := getNoteFilename(note.Meta.ID)
 	if err != nil {
-		return errors.Wrap(err, "get notes dir failed")
+		return errors.Wrap(err, "get note filename failed")
 	}
 
-	notePath := path.Join(notesDir, fmt.Sprintf(defaultNoteFilenameFormat, note.Meta.ID))
 	noteFile, err := os.Create(notePath)
 	if err != nil {
 		return errors.Wrap(err, "create note file failed")
