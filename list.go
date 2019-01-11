@@ -63,7 +63,7 @@ func List(output io.Writer, options ListOptions) error {
 			} else {
 				fields = append(fields, "d")
 			}
-		} else if time.Unix(0, 0).UTC().Equal(note.Deleted.UTC()) {
+		} else if !time.Unix(0, 0).UTC().Equal(note.Deleted.UTC()) {
 			continue
 		}
 
