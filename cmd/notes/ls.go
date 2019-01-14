@@ -34,7 +34,7 @@ func lsAction(ctx *cli.Context) error {
 		ShowDeleted: ctx.Bool("deleted"),
 	}
 
-	err := notes.List(ctx.App.Writer, options)
+	err := notes.ListNotes(ctx.App.Writer, options)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "ls failed").Error(), 1)
 	}
