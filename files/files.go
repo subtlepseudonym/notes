@@ -135,6 +135,7 @@ func SaveMeta(meta Meta) error {
 		}
 		return errors.Wrap(err, "create meta file failed")
 	}
+	defer metaFile.Close()
 
 	err = json.NewEncoder(metaFile).Encode(meta)
 	if err != nil {
@@ -142,7 +143,7 @@ func SaveMeta(meta Meta) error {
 		return errors.Wrap(err, "encode meta object failed")
 	}
 
-	return nil
+	return errors.Wrap(metaFile.Close(), "close meta file failed")
 }
 
 func getNoteFilename(id int) (string, error) {
@@ -167,6 +168,7 @@ func GetNote(id int) (Note, error) {
 	if err != nil {
 		return Note{}, errors.Wrap(err, "open note file failed")
 	}
+	defer f.Close()
 
 	var n Note
 	err = json.NewDecoder(f).Decode(&n)
@@ -174,7 +176,7 @@ func GetNote(id int) (Note, error) {
 		return Note{}, errors.Wrap(err, "decode note object failed")
 	}
 
-	return n, nil
+	return n, errors.Wrap(f.Close(), "close note file failed")
 }
 
 // SaveNote saves the provided note to file

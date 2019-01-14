@@ -47,6 +47,7 @@ func NewNote(options NoteOptions) (*files.Note, error) {
 			ID:      newNoteID,
 			Title:   title,
 			Created: time.Now().UTC(),
+			Deleted: time.Unix(0, 0),
 		},
 	}
 
