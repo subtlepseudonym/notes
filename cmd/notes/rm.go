@@ -12,7 +12,7 @@ import (
 var rm = cli.Command{
 	Name:      "rm",
 	Usage:     "remove an existing note",
-	ArgsUsage: "rm [flags] noteID",
+	ArgsUsage: "noteID",
 	Action:    rmAction,
 	Flags: []cli.Flag{
 		cli.BoolFlag{

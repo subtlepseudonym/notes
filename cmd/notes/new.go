@@ -13,14 +13,17 @@ import (
 const defaultEditor = "vim"
 
 var newNote = cli.Command{
-	Name:      "new",
-	Usage:     "create a new note",
-	ArgsUsage: "new [flags]",
-	Action:    newAction,
+	Name:   "new",
+	Usage:  "create a new note",
+	Action: newAction,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  "title, t",
 			Usage: "note title",
+		},
+		cli.StringFlag{
+			Name:  "editor",
+			Usage: "text editor command",
 		},
 	},
 }

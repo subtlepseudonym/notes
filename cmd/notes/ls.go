@@ -8,17 +8,16 @@ import (
 )
 
 var ls = cli.Command{
-	Name:      "ls",
-	Usage:     "list note info",
-	ArgsUsage: "ls [flags]",
-	Action:    lsAction,
+	Name:   "ls",
+	Usage:  "list note info",
+	Action: lsAction,
 	Flags: []cli.Flag{
 		cli.BoolFlag{
 			Name:  "all, a",
 			Usage: "show all notes",
 		},
 		cli.BoolFlag{
-			Name:  "l",
+			Name:  "long, l",
 			Usage: "long format",
 		},
 		cli.BoolFlag{

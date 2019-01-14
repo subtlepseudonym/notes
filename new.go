@@ -14,7 +14,7 @@ const (
 )
 
 // NoteOptions defines the set of options for modifying the behavior
-// new note creation
+// of new note creation
 type NoteOptions struct {
 	Title string
 

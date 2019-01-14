@@ -8,6 +8,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+// RemoveOptions defines all the options available for editiong the behavior of
+// note removal
 type RemoveOptions struct {
 	Hard bool // remove note file
 }
