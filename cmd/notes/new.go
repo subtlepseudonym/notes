@@ -44,7 +44,8 @@ func newAction(ctx *cli.Context) error {
 	} else if os.Getenv("EDITOR") != "" {
 		editor = os.Getenv("EDITOR")
 	}
-	body, err := files.GetNoteBodyFromUser(editor)
+
+	body, err := files.GetNoteBodyFromUser(editor, "")
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get body from user failed").Error(), 1)
 	}

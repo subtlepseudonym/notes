@@ -217,14 +217,19 @@ func RemoveNote(id int) error {
 
 // GetNoteBodyFromUser drops the user into the provided editor command before
 // retrieving the contents of the edited file
-func GetNoteBodyFromUser(editor string) (string, error) {
-	tempFile, err := ioutil.TempFile("", "note")
+func GetNoteBodyFromUser(editor, existingBody string) (string, error) {
+	file, err := ioutil.TempFile("", "note")
 	if err != nil {
 		return "", errors.Wrap(err, "create temporary file failed")
 	}
-	defer tempFile.Close()
+	defer file.Close()
 
-	cmd := exec.Command(editor, tempFile.Name())
+	_, err = fmt.Fprint(file, existingBody)
+	if err != nil {
+		return "", errors.Wrap(err, "print existing body to temporary file failed")
+	}
+
+	cmd := exec.Command(editor, file.Name())
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 
@@ -233,10 +238,10 @@ func GetNoteBodyFromUser(editor string) (string, error) {
 		return "", errors.Wrap(err, "run editor command failed")
 	}
 
-	bodyBytes, err := ioutil.ReadAll(tempFile)
+	bodyBytes, err := ioutil.ReadFile(file.Name())
 	if err != nil {
 		return "", errors.Wrap(err, "read temporary file failed")
 	}
 
-	return string(bodyBytes), errors.Wrap(tempFile.Close(), "close temporary file failed")
+	return string(bodyBytes), errors.Wrap(file.Close(), "close temporary file failed")
 }
