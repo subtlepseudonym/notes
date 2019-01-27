@@ -33,11 +33,6 @@ func newAction(ctx *cli.Context) error {
 		Title: ctx.String("title"),
 	}
 
-	note, err := notes.NewNote(options)
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "new failed").Error(), 1)
-	}
-
 	editor := defaultEditor
 	if ctx.String("editor") != "" {
 		editor = ctx.String("editor")
@@ -45,15 +40,19 @@ func newAction(ctx *cli.Context) error {
 		editor = os.Getenv("EDITOR")
 	}
 
+	meta, err := files.GetMeta(ctx.App.Version)
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "get meta failed").Error(), 1)
+	}
+
 	body, err := files.GetNoteBodyFromUser(editor, "")
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get body from user failed").Error(), 1)
 	}
 
-	note.Body = body
-	err = files.SaveNote(*note)
+	_, _, err = notes.NewNote(body, options, meta)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "save note failed").Error(), 1)
+		return cli.NewExitError(errors.Wrap(err, "create new failed").Error(), 1)
 	}
 
 	return nil

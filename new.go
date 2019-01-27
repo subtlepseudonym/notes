@@ -24,10 +24,13 @@ type NoteOptions struct {
 
 // NewNote generates a new Note and populates the metadata, saves it to
 // file, and returns it
-func NewNote(options NoteOptions) (*files.Note, error) {
-	meta, err := files.GetMeta(Version)
-	if err != nil {
-		return nil, errors.Wrap(err, "get meta failed")
+func NewNote(body string, options NoteOptions, meta *files.Meta) (*files.Note, *files.Meta, error) {
+	var err error
+	if meta == nil {
+		meta, err = files.GetMeta(Version)
+		if err != nil {
+			return nil, meta, errors.Wrap(err, "get meta failed")
+		}
 	}
 
 	newNoteID := 1
@@ -42,34 +45,35 @@ func NewNote(options NoteOptions) (*files.Note, error) {
 		title = generateDateTitle(options.DateTitleFormat, options.DateTitleLocation)
 	}
 
-	note := files.Note{
+	note := &files.Note{
 		Meta: files.NoteMeta{
 			ID:      newNoteID,
 			Title:   title,
 			Created: time.Now().UTC(),
 			Deleted: time.Unix(0, 0),
 		},
+		Body: body,
 	}
 
 	err = files.SaveNote(note)
 	if err != nil {
 		// FIXME: persist the note somewhere if saving it fails
-		return nil, errors.Wrap(err, "save note failed")
+		return nil, meta, errors.Wrap(err, "save note failed")
 	}
 
 	_, exists := meta.Notes[note.Meta.ID]
 	if exists {
-		return nil, errors.New("note ID is not unique")
+		return nil, meta, errors.New("note ID is not unique")
 	}
 
 	meta.Notes[note.Meta.ID] = note.Meta
 	meta.LatestID = note.Meta.ID
 	err = files.SaveMeta(meta)
 	if err != nil {
-		return nil, errors.Wrap(err, "save meta failed")
+		return nil, meta, errors.Wrap(err, "save meta failed")
 	}
 
-	return &note, nil
+	return note, meta, nil
 }
 
 func generateDateTitle(userFormat, userLocation string) string {
