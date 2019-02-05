@@ -64,6 +64,28 @@ func TestNewNote(t *testing.T) {
 
 	tests := []NewNoteTest{
 		NewNoteTest{
+			Name:    "default title, with body",
+			Body:    "very important note!",
+			Options: NoteOptions{},
+			DAL: FakeDAL{
+				meta: &files.Meta{
+					Version:  "v0.0.0",
+					LatestID: 0,
+					Notes:    make(map[int]files.NoteMeta),
+				},
+				notes: make(map[int]*files.Note),
+			},
+			ExpectedNote: &files.Note{
+				Meta: files.NoteMeta{
+					ID:      1,
+					Title:   fixedTime.Local().Format(time.RFC1123),
+					Created: fixedTime,
+					Deleted: time.Unix(0, 0),
+				},
+				Body: "very important note!",
+			},
+		},
+		NewNoteTest{
 			Name:    "default title, empty body",
 			Options: NoteOptions{},
 			DAL: FakeDAL{
