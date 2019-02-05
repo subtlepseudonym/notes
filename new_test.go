@@ -64,35 +64,28 @@ func TestNewNote(t *testing.T) {
 
 	tests := []NewNoteTest{
 		NewNoteTest{
-			Name:    "default title, with body",
-			Body:    "very important note!",
-			Options: NoteOptions{},
+			Name: "with existing note",
 			DAL: FakeDAL{
 				meta: &files.Meta{
-					Version:  "v0.0.0",
-					LatestID: 0,
+					LatestID: 6,
 					Notes:    make(map[int]files.NoteMeta),
 				},
 				notes: make(map[int]*files.Note),
 			},
 			ExpectedNote: &files.Note{
 				Meta: files.NoteMeta{
-					ID:      1,
+					ID:      7,
 					Title:   fixedTime.Local().Format(time.RFC1123),
 					Created: fixedTime,
 					Deleted: time.Unix(0, 0),
 				},
-				Body: "very important note!",
 			},
 		},
 		NewNoteTest{
-			Name:    "default title, empty body",
-			Options: NoteOptions{},
+			Name: "default title",
 			DAL: FakeDAL{
 				meta: &files.Meta{
-					Version:  "v0.0.0",
-					LatestID: 0,
-					Notes:    make(map[int]files.NoteMeta),
+					Notes: make(map[int]files.NoteMeta),
 				},
 				notes: make(map[int]*files.Note),
 			},
@@ -106,15 +99,13 @@ func TestNewNote(t *testing.T) {
 			},
 		},
 		NewNoteTest{
-			Name: "custom title, empty body",
+			Name: "custom title",
 			Options: NoteOptions{
 				Title: "TEST",
 			},
 			DAL: FakeDAL{
 				meta: &files.Meta{
-					Version:  "v0.0.0",
-					LatestID: 0,
-					Notes:    make(map[int]files.NoteMeta),
+					Notes: make(map[int]files.NoteMeta),
 				},
 				notes: make(map[int]*files.Note),
 			},
@@ -128,15 +119,13 @@ func TestNewNote(t *testing.T) {
 			},
 		},
 		NewNoteTest{
-			Name: "custom date title format, empty body",
+			Name: "custom date title format",
 			Options: NoteOptions{
 				DateTitleFormat: time.UnixDate,
 			},
 			DAL: FakeDAL{
 				meta: &files.Meta{
-					Version:  "v0.0.0",
-					LatestID: 0,
-					Notes:    make(map[int]files.NoteMeta),
+					Notes: make(map[int]files.NoteMeta),
 				},
 				notes: make(map[int]*files.Note),
 			},
@@ -150,15 +139,13 @@ func TestNewNote(t *testing.T) {
 			},
 		},
 		NewNoteTest{
-			Name: "custom date title location, empty body",
+			Name: "custom date title location",
 			Options: NoteOptions{
 				DateTitleLocation: "UTC",
 			},
 			DAL: FakeDAL{
 				meta: &files.Meta{
-					Version:  "v0.0.0",
-					LatestID: 0,
-					Notes:    make(map[int]files.NoteMeta),
+					Notes: make(map[int]files.NoteMeta),
 				},
 				notes: make(map[int]*files.Note),
 			},
