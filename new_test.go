@@ -171,6 +171,25 @@ func TestNewNote(t *testing.T) {
 				},
 			},
 		},
+		NewNoteTest{
+			Name: "with body",
+			Body: "very important note!",
+			DAL: FakeDAL{
+				meta: &files.Meta{
+					Notes: make(map[int]files.NoteMeta),
+				},
+				notes: make(map[int]*files.Note),
+			},
+			ExpectedNote: &files.Note{
+				Meta: files.NoteMeta{
+					ID:      1,
+					Title:   fixedTime.Local().Format(time.RFC1123),
+					Created: fixedTime,
+					Deleted: time.Unix(0, 0),
+				},
+				Body: "very important note!",
+			},
+		},
 	}
 
 	for _, test := range tests {
