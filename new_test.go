@@ -46,15 +46,34 @@ func (d FakeDAL) RemoveNote(id int) error {
 	return nil
 }
 
+type ErrorDALGetMeta struct {
+	FakeDAL
+}
+
+func (d ErrorDALGetMeta) GetMeta() (*files.Meta, error) {
+	return nil, fmt.Errorf("no meta for you")
+}
+
+type ErrorDALGetNote struct {
+	FakeDAL
+}
+
+func (d ErrorDALGetNote) GetNote(id int) (*files.Note, error) {
+	return nil, fmt.Errorf("no note for you")
+}
+
 // NewNoteTest defines the input arguments and expected output
 // of each NewNote subtest
 type NewNoteTest struct {
-	Name    string
+	Name string
+	// args
 	Body    string
 	Options NoteOptions
 	DAL     files.DAL
-
-	ExpectedNote *files.Note
+	// output
+	ExpectedNote  *files.Note
+	ExpectedMeta  *files.Meta
+	ExpectedError error
 }
 
 func TestNewNote(t *testing.T) {
@@ -78,6 +97,17 @@ func TestNewNote(t *testing.T) {
 					Title:   fixedTime.Local().Format(time.RFC1123),
 					Created: fixedTime,
 					Deleted: time.Unix(0, 0),
+				},
+			},
+			ExpectedMeta: &files.Meta{
+				LatestID: 7,
+				Notes: map[int]files.NoteMeta{
+					7: files.NoteMeta{
+						ID:      7,
+						Title:   fixedTime.Local().Format(time.RFC1123),
+						Created: fixedTime,
+						Deleted: time.Unix(0, 0),
+					},
 				},
 			},
 		},
@@ -181,24 +211,28 @@ func TestNewNote(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			note, _, err := NewNote(test.Body, test.Options, test.DAL)
-			if err != nil {
-				t.Errorf("NewNote failed: %s", err)
-				t.FailNow()
-			}
+			note, meta, err := NewNote(test.Body, test.Options, test.DAL)
 
+			if diff := deep.Equal(err, test.ExpectedError); diff != nil {
+				t.Error(diff)
+			}
 			if diff := deep.Equal(note, test.ExpectedNote); diff != nil {
 				t.Error(diff)
 			}
-
-			savedNote, err := test.DAL.GetNote(note.Meta.ID)
-			if err != nil {
-				t.Errorf("test.DAL.GetNote failed: %s", err)
-				t.FailNow()
+			if diff := deep.Equal(meta, test.ExpectedMeta); diff != nil {
+				t.Error(diff)
 			}
 
-			if diff := deep.Equal(savedNote, test.ExpectedNote); diff != nil {
-				t.Error(diff)
+			if _, ok := test.DAL.(ErrorDALGetNote); !ok {
+				savedNote, err := test.DAL.GetNote(note.Meta.ID)
+				if err != nil {
+					t.Errorf("test.DAL.GetNote failed: %s", err)
+					t.FailNow()
+				}
+
+				if diff := deep.Equal(savedNote, test.ExpectedNote); diff != nil {
+					t.Error(diff)
+				}
 			}
 		})
 	}
