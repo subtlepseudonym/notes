@@ -29,11 +29,7 @@ func NewNote(body string, options NoteOptions, dal files.DAL) (*files.Note, *fil
 	if err != nil {
 		return nil, meta, errors.Wrap(err, "get meta failed")
 	}
-
-	newNoteID := 1
-	if len(meta.Notes) > 0 {
-		newNoteID = meta.LatestID + 1
-	}
+	newNoteID := meta.LatestID + 1
 
 	var title string
 	if options.Title != "" {

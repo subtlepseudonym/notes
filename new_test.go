@@ -177,15 +177,23 @@ func TestNewNote(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			note, _, err := NewNote(test.Body, test.Options, test.DAL)
 			if err != nil {
-				t.Errorf("NewNote failed: %s\n", err)
+				t.Errorf("NewNote failed: %s", err)
 				t.FailNow()
 			}
 
 			if diff := deep.Equal(note, test.ExpectedNote); diff != nil {
 				t.Error(diff)
 			}
+
+			savedNote, err := test.DAL.GetNote(note.Meta.ID)
+			if err != nil {
+				t.Errorf("test.DAL.GetNote failed: %s", err)
+				t.FailNow()
+			}
+
+			if diff := deep.Equal(savedNote, test.ExpectedNote); diff != nil {
+				t.Error(diff)
+			}
 		})
 	}
-	// TODO: above options are good for testing title generation
-	// TODO: may want to break these out into body tests and meta tests
 }
