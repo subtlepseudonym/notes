@@ -29,8 +29,8 @@ type ListOptions struct {
 	ListDelimiter string
 }
 
-func ListNotes(output io.Writer, options ListOptions) error {
-	meta, err := files.GetMeta(Version)
+func ListNotes(output io.Writer, options ListOptions, dal files.DAL) error {
+	meta, err := dal.GetMeta()
 	if err != nil {
 		return errors.Wrap(err, "get meta failed")
 	}

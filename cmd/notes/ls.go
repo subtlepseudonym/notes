@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/subtlepseudonym/notes"
+	"github.com/subtlepseudonym/notes/files"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -34,7 +35,12 @@ func lsAction(ctx *cli.Context) error {
 		ShowDeleted: ctx.Bool("deleted"),
 	}
 
-	err := notes.ListNotes(ctx.App.Writer, options)
+	dal, err := files.NewDefaultDAL(Version) // FIXME: option to use different dal
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "initialize dal failed").Error(), 1)
+	}
+
+	err = notes.ListNotes(ctx.App.Writer, options, dal)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "ls failed").Error(), 1)
 	}
