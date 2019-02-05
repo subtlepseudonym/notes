@@ -15,14 +15,14 @@ type RemoveOptions struct {
 }
 
 // RemoveNote either soft or hard deletes a note
-func RemoveNote(noteID int, options RemoveOptions) error {
-	note, err := files.GetNote(noteID)
+func RemoveNote(noteID int, options RemoveOptions, dal files.DAL) error {
+	note, err := dal.GetNote(noteID)
 	if err != nil {
 		return errors.Wrap(err, "get note failed")
 	}
 
 	if options.Hard {
-		err = files.RemoveNote(noteID)
+		err = dal.RemoveNote(noteID)
 		if err != nil {
 			return errors.Wrap(err, "remove note file failed")
 		}
@@ -30,18 +30,18 @@ func RemoveNote(noteID int, options RemoveOptions) error {
 	}
 
 	note.Meta.Deleted = time.Now()
-	err = files.SaveNote(note)
+	err = dal.SaveNote(note)
 	if err != nil {
 		return errors.Wrap(err, "save note failed")
 	}
 
-	meta, err := files.GetMeta(Version)
+	meta, err := dal.GetMeta()
 	if err != nil {
 		return errors.Wrap(err, "get meta failed")
 	}
 
 	meta.Notes[note.Meta.ID] = note.Meta
-	err = files.SaveMeta(meta)
+	err = dal.SaveMeta(meta)
 	if err != nil {
 		return errors.Wrap(err, "save meta failed")
 	}

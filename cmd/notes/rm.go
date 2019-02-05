@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/subtlepseudonym/notes"
+	"github.com/subtlepseudonym/notes/files"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -35,7 +36,12 @@ func rmAction(ctx *cli.Context) error {
 		Hard: ctx.Bool("hard"),
 	}
 
-	err = notes.RemoveNote(int(noteID), options)
+	dal, err := files.NewDefaultDAL(Version) // FIXME: add option for different dal
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "initialize dal failed").Error(), 1)
+	}
+
+	err = notes.RemoveNote(int(noteID), options, dal)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "remove note failed"), 1)
 	}
