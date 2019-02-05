@@ -16,35 +16,30 @@ type EditOptions struct {
 
 // EditNote sets a new body and options for an existing note. It restores
 // notes that were soft deleted.
-func EditNote(noteID int, body string, options EditOptions) error {
-	note, err := files.GetNote(noteID)
+func EditNote(note *files.Note, options EditOptions, dal files.DAL) (*files.Note, *files.Meta, error) {
+	meta, err := dal.GetMeta()
 	if err != nil {
-		return errors.Wrap(err, "get note failed")
-	}
-	if !time.Unix(0, 0).Equal(note.Meta.Deleted) {
-		note.Meta.Deleted = time.Unix(0, 0) // restore soft deleted notes
+		return nil, meta, errors.Wrap(err, "get meta failed")
 	}
 
-	meta, err := files.GetMeta(Version)
-	if err != nil {
-		return errors.Wrap(err, "get meta failed")
+	if !time.Unix(0, 0).Equal(note.Meta.Deleted) {
+		note.Meta.Deleted = time.Unix(0, 0) // restore soft deleted notes
 	}
 
 	if options.Title != "" {
 		note.Meta.Title = options.Title
 	}
-	note.Body = body
 
-	err = files.SaveNote(note)
+	err = dal.SaveNote(note)
 	if err != nil {
-		return errors.Wrap(err, "save note failed")
+		return note, meta, errors.Wrap(err, "save note failed")
 	}
 
 	meta.Notes[note.Meta.ID] = note.Meta
-	err = files.SaveMeta(meta)
+	err = dal.SaveMeta(meta)
 	if err != nil {
-		return errors.Wrap(err, "save meta failed")
+		return note, meta, errors.Wrap(err, "save meta failed")
 	}
 
-	return nil
+	return note, meta, nil
 }

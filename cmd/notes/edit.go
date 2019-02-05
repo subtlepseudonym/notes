@@ -44,7 +44,12 @@ func editAction(ctx *cli.Context) error {
 		editor = os.Getenv("EDITOR")
 	}
 
-	note, err := files.GetNote(int(noteID))
+	dal, err := files.NewDefaultDAL(Version) // FIXME: add option for different dal
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "initialize dal failed").Error(), 1)
+	}
+
+	note, err := dal.GetNote(int(noteID))
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get note failed"), 1)
 	}
@@ -53,12 +58,13 @@ func editAction(ctx *cli.Context) error {
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get note body from user failed"), 1)
 	}
+	note.Body = body
 
 	options := notes.EditOptions{
 		Title: ctx.String("title"),
 	}
 
-	err = notes.EditNote(int(noteID), body, options)
+	_, _, err = notes.EditNote(note, options, dal)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "edit existing note failed"), 1)
 	}
