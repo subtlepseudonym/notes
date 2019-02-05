@@ -24,13 +24,10 @@ type NoteOptions struct {
 
 // NewNote generates a new Note and populates the metadata, saves it to
 // file, and returns it
-func NewNote(body string, options NoteOptions, meta *files.Meta) (*files.Note, *files.Meta, error) {
-	var err error
-	if meta == nil {
-		meta, err = files.GetMeta(Version)
-		if err != nil {
-			return nil, meta, errors.Wrap(err, "get meta failed")
-		}
+func NewNote(body string, options NoteOptions, dal files.DAL) (*files.Note, *files.Meta, error) {
+	meta, err := dal.GetMeta()
+	if err != nil {
+		return nil, meta, errors.Wrap(err, "get meta failed")
 	}
 
 	newNoteID := 1
@@ -55,7 +52,7 @@ func NewNote(body string, options NoteOptions, meta *files.Meta) (*files.Note, *
 		Body: body,
 	}
 
-	err = files.SaveNote(note)
+	err = dal.SaveNote(note)
 	if err != nil {
 		// FIXME: persist the note somewhere if saving it fails
 		return nil, meta, errors.Wrap(err, "save note failed")
@@ -68,7 +65,7 @@ func NewNote(body string, options NoteOptions, meta *files.Meta) (*files.Note, *
 
 	meta.Notes[note.Meta.ID] = note.Meta
 	meta.LatestID = note.Meta.ID
-	err = files.SaveMeta(meta)
+	err = dal.SaveMeta(meta)
 	if err != nil {
 		return nil, meta, errors.Wrap(err, "save meta failed")
 	}

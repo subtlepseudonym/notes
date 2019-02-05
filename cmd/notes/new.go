@@ -40,9 +40,9 @@ func newAction(ctx *cli.Context) error {
 		editor = os.Getenv("EDITOR")
 	}
 
-	meta, err := files.GetMeta(ctx.App.Version)
+	dal, err := files.NewDefaultDAL(Version) // FIXME: option to use different dal
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get meta failed").Error(), 1)
+		return cli.NewExitError(errors.Wrap(err, "initialize dal failed").Error(), 1)
 	}
 
 	body, err := files.GetNoteBodyFromUser(editor, "")
@@ -50,7 +50,7 @@ func newAction(ctx *cli.Context) error {
 		return cli.NewExitError(errors.Wrap(err, "get body from user failed").Error(), 1)
 	}
 
-	_, _, err = notes.NewNote(body, options, meta)
+	_, _, err = notes.NewNote(body, options, dal)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "create new failed").Error(), 1)
 	}

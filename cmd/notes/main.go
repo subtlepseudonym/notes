@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/subtlepseudonym/notes"
-
 	"github.com/urfave/cli"
 )
+
+// Version is set at compile time
+var Version = "v0.0.0"
 
 func main() {
 	os.Setenv("_CLI_ZSH_AUTOCOMPLETE_HACK", "1")
@@ -17,7 +18,7 @@ func main() {
 	app.Usage = "write and organize notes"
 	app.Description = "notes is intended to make it easy to jot down stream of consciousness notes while working in the command line and automatically back those notes up to a remote server"
 
-	app.Version = notes.Version
+	app.Version = Version
 	app.Authors = []cli.Author{
 		cli.Author{
 			Name:  "Connor Demille",
