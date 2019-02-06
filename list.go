@@ -42,7 +42,8 @@ func ListNotes(output io.Writer, options ListOptions, dal files.DAL) error {
 		limit = options.ListSize
 	}
 
-	idFormat := fmt.Sprintf("%% %dx", len(meta.Notes)+1)
+	padAmount := len(meta.Notes)/16 + 1
+	idFormat := fmt.Sprintf("%% %dx", padAmount)
 
 	var listed int
 	idx := meta.LatestID
