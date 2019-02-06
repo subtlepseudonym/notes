@@ -27,7 +27,7 @@ type NoteOptions struct {
 func NewNote(body string, options NoteOptions, dal files.DAL) (*files.Note, *files.Meta, error) {
 	meta, err := dal.GetMeta()
 	if err != nil {
-		return nil, meta, errors.Wrap(err, "get meta failed")
+		return nil, nil, errors.Wrap(err, "get meta failed")
 	}
 	newNoteID := meta.LatestID + 1
 

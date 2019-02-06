@@ -1,6 +1,7 @@
 package notes
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -16,18 +17,36 @@ import (
 type FakeDAL struct {
 	meta  *files.Meta
 	notes map[int]*files.Note
+	// error behavior
+	GetMetaError    error
+	SaveMetaError   error
+	GetNoteError    error
+	SaveNoteError   error
+	RemoveNoteError error
 }
 
 func (d FakeDAL) GetMeta() (*files.Meta, error) {
+	if d.GetMetaError != nil {
+		return nil, d.GetMetaError
+	}
+
 	return d.meta, nil
 }
 
 func (d FakeDAL) SaveMeta(meta *files.Meta) error {
+	if d.SaveMetaError != nil {
+		return d.SaveMetaError
+	}
+
 	d.meta = meta
 	return nil
 }
 
 func (d FakeDAL) GetNote(id int) (*files.Note, error) {
+	if d.GetNoteError != nil {
+		return nil, d.GetNoteError
+	}
+
 	note, exists := d.notes[id]
 	if !exists {
 		return nil, fmt.Errorf("no note with id \"%d\"", id)
@@ -37,29 +56,21 @@ func (d FakeDAL) GetNote(id int) (*files.Note, error) {
 }
 
 func (d FakeDAL) SaveNote(note *files.Note) error {
+	if d.SaveNoteError != nil {
+		return d.SaveNoteError
+	}
+
 	d.notes[note.Meta.ID] = note
 	return nil
 }
 
 func (d FakeDAL) RemoveNote(id int) error {
+	if d.RemoveNoteError != nil {
+		return d.RemoveNoteError
+	}
+
 	delete(d.notes, id)
 	return nil
-}
-
-type ErrorDALGetMeta struct {
-	FakeDAL
-}
-
-func (d ErrorDALGetMeta) GetMeta() (*files.Meta, error) {
-	return nil, fmt.Errorf("no meta for you")
-}
-
-type ErrorDALGetNote struct {
-	FakeDAL
-}
-
-func (d ErrorDALGetNote) GetNote(id int) (*files.Note, error) {
-	return nil, fmt.Errorf("no note for you")
 }
 
 // NewNoteTest defines the input arguments and expected output
@@ -73,7 +84,7 @@ type NewNoteTest struct {
 	// output
 	ExpectedNote  *files.Note
 	ExpectedMeta  *files.Meta
-	ExpectedError error
+	ErrorExpected error // only ErrorExpected == nil is checked
 }
 
 func TestNewNote(t *testing.T) {
@@ -81,7 +92,16 @@ func TestNewNote(t *testing.T) {
 	timePatch := monkey.Patch(time.Now, func() time.Time { return fixedTime })
 	defer timePatch.Unpatch()
 
+	// FIXME: this could probably be more readable
 	tests := []NewNoteTest{
+		NewNoteTest{
+			Name: "dal.GetMeta() fails",
+			DAL: FakeDAL{
+				GetMetaError: errors.New("GetMeta"),
+			},
+			ErrorExpected: errors.New("non-nil"),
+		},
+
 		NewNoteTest{
 			Name: "with existing note",
 			DAL: FakeDAL{
@@ -111,6 +131,7 @@ func TestNewNote(t *testing.T) {
 				},
 			},
 		},
+
 		NewNoteTest{
 			Name: "default title",
 			DAL: FakeDAL{
@@ -127,7 +148,19 @@ func TestNewNote(t *testing.T) {
 					Deleted: time.Unix(0, 0),
 				},
 			},
+			ExpectedMeta: &files.Meta{
+				LatestID: 1,
+				Notes: map[int]files.NoteMeta{
+					1: files.NoteMeta{
+						ID:      1,
+						Title:   fixedTime.Local().Format(time.RFC1123),
+						Created: fixedTime,
+						Deleted: time.Unix(0, 0),
+					},
+				},
+			},
 		},
+
 		NewNoteTest{
 			Name: "custom title",
 			Options: NoteOptions{
@@ -147,7 +180,19 @@ func TestNewNote(t *testing.T) {
 					Deleted: time.Unix(0, 0),
 				},
 			},
+			ExpectedMeta: &files.Meta{
+				LatestID: 1,
+				Notes: map[int]files.NoteMeta{
+					1: files.NoteMeta{
+						ID:      1,
+						Title:   "TEST",
+						Created: fixedTime,
+						Deleted: time.Unix(0, 0),
+					},
+				},
+			},
 		},
+
 		NewNoteTest{
 			Name: "custom date title format",
 			Options: NoteOptions{
@@ -167,7 +212,19 @@ func TestNewNote(t *testing.T) {
 					Deleted: time.Unix(0, 0),
 				},
 			},
+			ExpectedMeta: &files.Meta{
+				LatestID: 1,
+				Notes: map[int]files.NoteMeta{
+					1: files.NoteMeta{
+						ID:      1,
+						Title:   fixedTime.Local().Format(time.UnixDate),
+						Created: fixedTime,
+						Deleted: time.Unix(0, 0),
+					},
+				},
+			},
 		},
+
 		NewNoteTest{
 			Name: "custom date title location",
 			Options: NoteOptions{
@@ -187,7 +244,19 @@ func TestNewNote(t *testing.T) {
 					Deleted: time.Unix(0, 0),
 				},
 			},
+			ExpectedMeta: &files.Meta{
+				LatestID: 1,
+				Notes: map[int]files.NoteMeta{
+					1: files.NoteMeta{
+						ID:      1,
+						Title:   fixedTime.UTC().Format(time.RFC1123),
+						Created: fixedTime,
+						Deleted: time.Unix(0, 0),
+					},
+				},
+			},
 		},
+
 		NewNoteTest{
 			Name: "with body",
 			Body: "very important note!",
@@ -206,16 +275,84 @@ func TestNewNote(t *testing.T) {
 				},
 				Body: "very important note!",
 			},
+			ExpectedMeta: &files.Meta{
+				LatestID: 1,
+				Notes: map[int]files.NoteMeta{
+					1: files.NoteMeta{
+						ID:      1,
+						Title:   fixedTime.Local().Format(time.RFC1123),
+						Created: fixedTime,
+						Deleted: time.Unix(0, 0),
+					},
+				},
+			},
+		},
+
+		NewNoteTest{
+			Name: "dal.SaveNote() fails",
+			DAL: FakeDAL{
+				meta: &files.Meta{
+					LatestID: 10, // something non-zero
+				},
+				SaveNoteError: errors.New("SaveNote"),
+			},
+			ExpectedMeta: &files.Meta{
+				LatestID: 10,
+			},
+			ErrorExpected: errors.New("non-nil"),
+		},
+
+		NewNoteTest{
+			Name: "non-unique note ID", // could happen on corrupt meta object
+			DAL: FakeDAL{
+				meta: &files.Meta{
+					LatestID: 1,
+					Notes: map[int]files.NoteMeta{
+						2: files.NoteMeta{},
+					},
+				},
+				notes: make(map[int]*files.Note),
+			},
+			ExpectedMeta: &files.Meta{
+				LatestID: 1,
+				Notes: map[int]files.NoteMeta{
+					2: files.NoteMeta{},
+				},
+			},
+			ErrorExpected: errors.New("non-nil"),
+		},
+
+		NewNoteTest{
+			Name: "dal.SaveMeta() fails",
+			DAL: FakeDAL{
+				meta: &files.Meta{
+					Notes: make(map[int]files.NoteMeta),
+				},
+				notes:         make(map[int]*files.Note),
+				SaveMetaError: errors.New("SaveMeta"),
+			},
+			ExpectedMeta: &files.Meta{
+				LatestID: 1,
+				Notes: map[int]files.NoteMeta{
+					1: files.NoteMeta{
+						ID:      1,
+						Title:   fixedTime.Local().Format(time.RFC1123),
+						Created: fixedTime,
+						Deleted: time.Unix(0, 0),
+					},
+				},
+			},
+			ErrorExpected: errors.New("non-nil"),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
 			note, meta, err := NewNote(test.Body, test.Options, test.DAL)
-
-			if diff := deep.Equal(err, test.ExpectedError); diff != nil {
-				t.Error(diff)
+			if test.ErrorExpected == nil && err != nil {
+				t.Error(err)
 			}
+
 			if diff := deep.Equal(note, test.ExpectedNote); diff != nil {
 				t.Error(diff)
 			}
@@ -223,7 +360,7 @@ func TestNewNote(t *testing.T) {
 				t.Error(diff)
 			}
 
-			if _, ok := test.DAL.(ErrorDALGetNote); !ok {
+			if err == nil {
 				savedNote, err := test.DAL.GetNote(note.Meta.ID)
 				if err != nil {
 					t.Errorf("test.DAL.GetNote failed: %s", err)
