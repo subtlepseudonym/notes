@@ -21,26 +21,28 @@ func RemoveNote(noteID int, options RemoveOptions, dal files.DAL) error {
 		return errors.Wrap(err, "get note failed")
 	}
 
-	if options.Hard {
-		err = dal.RemoveNote(noteID)
-		if err != nil {
-			return errors.Wrap(err, "remove note file failed")
-		}
-		return nil
-	}
-
-	note.Meta.Deleted = time.Now()
-	err = dal.SaveNote(note)
-	if err != nil {
-		return errors.Wrap(err, "save note failed")
-	}
-
 	meta, err := dal.GetMeta()
 	if err != nil {
 		return errors.Wrap(err, "get meta failed")
 	}
 
-	meta.Notes[note.Meta.ID] = note.Meta
+	if options.Hard {
+		err = dal.RemoveNote(noteID)
+		if err != nil {
+			return errors.Wrap(err, "remove note file failed")
+		}
+
+		delete(meta.Notes, note.Meta.ID)
+	} else {
+		note.Meta.Deleted = time.Now()
+		err = dal.SaveNote(note)
+		if err != nil {
+			return errors.Wrap(err, "save note failed")
+		}
+
+		meta.Notes[note.Meta.ID] = note.Meta
+	}
+
 	err = dal.SaveMeta(meta)
 	if err != nil {
 		return errors.Wrap(err, "save meta failed")

@@ -57,7 +57,7 @@ func (d *defaultDAL) buildNewMeta() (*Meta, error) {
 		}
 	}
 
-	metaPath := path.Join(d.metaFilename, d.notesDirectoryPath)
+	metaPath := path.Join(d.notesDirectoryPath, d.metaFilename)
 	metaFile, err := os.Create(metaPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "create meta file failed")
@@ -79,29 +79,30 @@ func (d *defaultDAL) buildNewMeta() (*Meta, error) {
 
 // GetMeta retrieves and decodes a Meta from file
 func (d *defaultDAL) GetMeta() (*Meta, error) {
-	metaPath := path.Join(d.metaFilename, d.notesDirectoryPath)
+	metaPath := path.Join(d.notesDirectoryPath, d.metaFilename)
 	metaFile, err := os.Open(metaPath)
 	if err != nil {
 		return d.buildNewMeta()
 	}
 	defer metaFile.Close()
 
-	var m *Meta
-	err = json.NewDecoder(metaFile).Decode(m)
+	var m Meta
+	err = json.NewDecoder(metaFile).Decode(&m)
 	if err != nil {
 		return nil, errors.Wrap(err, "decode meta file failed")
 	}
 
-	return m, errors.Wrap(metaFile.Close(), "close meta file failed")
+	return &m, errors.Wrap(metaFile.Close(), "close meta file failed")
 }
 
 // SaveMeta encodes and saves the provided Meta to file
 func (d *defaultDAL) SaveMeta(meta *Meta) error {
-	metaPath := path.Join(d.metaFilename, d.notesDirectoryPath)
+	metaPath := path.Join(d.notesDirectoryPath, d.metaFilename)
 	err := os.Rename(metaPath, metaPath+".bak")
 	if err != nil {
 		return errors.Wrap(err, "backup old meta file failed")
 	}
+	// TODO: remove meta backup
 
 	metaFile, err := os.Create(metaPath)
 	if err != nil {
@@ -135,13 +136,13 @@ func (d *defaultDAL) GetNote(id int) (*Note, error) {
 	}
 	defer noteFile.Close()
 
-	var n *Note
-	err = json.NewDecoder(noteFile).Decode(n)
+	var n Note
+	err = json.NewDecoder(noteFile).Decode(&n)
 	if err != nil {
 		return nil, errors.Wrap(err, "decode note file failed")
 	}
 
-	return n, errors.Wrap(noteFile.Close(), "close note file failed")
+	return &n, errors.Wrap(noteFile.Close(), "close note file failed")
 }
 
 // SaveNote encodes and saves the provided Note to file
