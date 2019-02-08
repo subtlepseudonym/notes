@@ -42,7 +42,7 @@ func NewNote(body string, options NoteOptions, dal files.DAL) (*files.Note, *fil
 		Meta: files.NoteMeta{
 			ID:      newNoteID,
 			Title:   title,
-			Created: time.Now().UTC(),
+			Created: time.Now(),
 			Deleted: time.Unix(0, 0),
 		},
 		Body: body,
