@@ -13,7 +13,7 @@ import (
 
 const (
 	defaultListSize       = 10
-	defaultListTimeFormat = time.RFC822
+	defaultListTimeFormat = time.RFC3339
 	defaultListDelimiter  = " | "
 )
 
@@ -59,12 +59,12 @@ func ListNotes(output io.Writer, options ListOptions, dal files.DAL) error {
 		fields = append(fields, fmt.Sprintf(idFormat, note.ID))
 
 		if options.ShowDeleted {
-			if time.Unix(0, 0).UTC().Equal(note.Deleted.UTC()) {
+			if time.Unix(0, 0).Equal(note.Deleted) {
 				fields = append(fields, " ")
 			} else {
 				fields = append(fields, "d")
 			}
-		} else if !time.Unix(0, 0).UTC().Equal(note.Deleted.UTC()) {
+		} else if !time.Unix(0, 0).Equal(note.Deleted) {
 			continue
 		}
 
@@ -73,7 +73,7 @@ func ListNotes(output io.Writer, options ListOptions, dal files.DAL) error {
 			if options.TimeFormat != "" {
 				timeFormat = options.TimeFormat
 			}
-			fields = append(fields, note.Created.Format(timeFormat))
+			fields = append(fields, note.Created.UTC().Format(timeFormat))
 		}
 
 		fields = append(fields, note.Title)
