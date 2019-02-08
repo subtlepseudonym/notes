@@ -1,11 +1,15 @@
 BINARY=notes
 VERSION=`git describe --abbrev=0`
-LDFLAGS=--ldflags "-X main.Version=${VERSION}"
+BUILD=$$(cat build)
+LDFLAGS=--ldflags "-X main.Version=${VERSION}+${BUILD}"
+
+NEW_BUILD=$$(($(BUILD) + 1))
 
 all: test build
 
 build: format
 	go build ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
+	echo $(NEW_BUILD) > ./build
 
 test:
 	gotest --race -v ./...
