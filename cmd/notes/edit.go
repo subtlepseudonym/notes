@@ -29,14 +29,6 @@ var edit = cli.Command{
 }
 
 func editAction(ctx *cli.Context) error {
-	if !ctx.Args().Present() {
-		return cli.NewExitError(errors.New("note ID argument is required"), 1)
-	}
-	noteID, err := strconv.ParseInt(ctx.Args().First(), 16, 64)
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "parse base 16 noteID argument failed"), 1)
-	}
-
 	editor := defaultEditor
 	if ctx.String("editor") != "" {
 		editor = ctx.String("editor")
@@ -47,6 +39,21 @@ func editAction(ctx *cli.Context) error {
 	dal, err := files.NewDefaultDAL(Version) // FIXME: add option for different dal
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "initialize dal failed").Error(), 1)
+	}
+
+	meta, err := dal.GetMeta()
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "get meta failed").Error(), 1)
+	}
+
+	var noteID int64
+	if ctx.Args().First() != "" {
+		noteID, err = strconv.ParseInt(ctx.Args().First(), 16, 64)
+		if err != nil {
+			return cli.NewExitError(errors.Wrap(err, "parse base 16 noteID argument failed"), 1)
+		}
+	} else {
+		noteID = int64(meta.LatestID)
 	}
 
 	note, err := dal.GetNote(int(noteID))
