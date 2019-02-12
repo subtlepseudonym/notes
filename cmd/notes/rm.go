@@ -2,9 +2,9 @@ package main
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/subtlepseudonym/notes"
-	"github.com/subtlepseudonym/notes/files"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -27,23 +27,47 @@ func rmAction(ctx *cli.Context) error {
 	if !ctx.Args().Present() {
 		return cli.NewExitError(errors.New("note ID argument is required"), 1)
 	}
-	noteID, err := strconv.ParseInt(ctx.Args().First(), 16, 64)
+	n, err := strconv.ParseInt(ctx.Args().First(), 16, 64)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "parse base 16 noteID argument failed"), 1)
 	}
+	noteID := int(n)
 
-	options := notes.RemoveOptions{
-		Hard: ctx.Bool("hard"),
+	dal, err := notes.NewDefaultDAL(Version) // FIXME: add option for different dal
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
 	}
 
-	dal, err := files.NewDefaultDAL(Version) // FIXME: add option for different dal
+	note, err := dal.GetNote(noteID)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "initialize dal failed").Error(), 1)
+		return cli.NewExitError(errors.Wrap(err, "get note failed"), 1)
 	}
 
-	err = notes.RemoveNote(int(noteID), options, dal)
+	meta, err := dal.GetMeta()
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "remove note failed"), 1)
+		return cli.NewExitError(errors.Wrap(err, "get meta failed"), 1)
+	}
+
+	if ctx.Bool("hard") {
+		err = dal.RemoveNote(noteID)
+		if err != nil {
+			return cli.NewExitError(errors.Wrap(err, "remove note file failed"), 1)
+		}
+
+		delete(meta.Notes, note.Meta.ID)
+	} else {
+		note.Meta.Deleted = time.Now()
+		err = dal.SaveNote(note)
+		if err != nil {
+			return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
+		}
+
+		meta.Notes[note.Meta.ID] = note.Meta
+	}
+
+	err = dal.SaveMeta(meta)
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "save meta failed"), 1)
 	}
 
 	return nil

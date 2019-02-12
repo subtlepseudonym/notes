@@ -10,6 +10,8 @@ import (
 // Version is set at compile time
 var Version = "v0.0.0"
 
+const defaultEditor = "vim"
+
 func main() {
 	os.Setenv("_CLI_ZSH_AUTOCOMPLETE_HACK", "1")
 

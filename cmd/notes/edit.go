@@ -1,11 +1,10 @@
 package main
 
 import (
-	"os"
 	"strconv"
+	"time"
 
 	"github.com/subtlepseudonym/notes"
-	"github.com/subtlepseudonym/notes/files"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -22,28 +21,23 @@ var edit = cli.Command{
 			Usage: "note title",
 		},
 		cli.StringFlag{
-			Name:  "editor",
-			Usage: "text editor command",
+			Name:   "editor",
+			Usage:  "text editor command",
+			Value:  defaultEditor,
+			EnvVar: "EDTIOR",
 		},
 	},
 }
 
 func editAction(ctx *cli.Context) error {
-	editor := defaultEditor
-	if ctx.String("editor") != "" {
-		editor = ctx.String("editor")
-	} else if os.Getenv("EDITOR") != "" {
-		editor = os.Getenv("EDITOR")
-	}
-
-	dal, err := files.NewDefaultDAL(Version) // FIXME: add option for different dal
+	dal, err := notes.NewDefaultDAL(Version) // FIXME: add option for different dal
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "initialize dal failed").Error(), 1)
+		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
 	}
 
 	meta, err := dal.GetMeta()
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get meta failed").Error(), 1)
+		return cli.NewExitError(errors.Wrap(err, "get meta failed"), 1)
 	}
 
 	var noteID int64
@@ -61,19 +55,29 @@ func editAction(ctx *cli.Context) error {
 		return cli.NewExitError(errors.Wrap(err, "get note failed"), 1)
 	}
 
-	body, err := files.GetNoteBodyFromUser(editor, note.Body)
+	body, err := notes.GetNoteBodyFromUser(ctx.String("editor"), note.Body)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get note body from user failed"), 1)
 	}
 	note.Body = body
 
-	options := notes.EditOptions{
-		Title: ctx.String("title"),
+	if !time.Unix(0, 0).Equal(note.Meta.Deleted) {
+		note.Meta.Deleted = time.Unix(0, 0) // restore soft deleted notes
 	}
 
-	_, _, err = notes.EditNote(note, options, dal)
+	if ctx.String("title") != "" {
+		note.Meta.Title = ctx.String("title")
+	}
+
+	err = dal.SaveNote(note)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "edit existing note failed"), 1)
+		return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
+	}
+
+	meta.Notes[note.Meta.ID] = note.Meta
+	err = dal.SaveMeta(meta)
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "save meta failed"), 1)
 	}
 
 	return nil

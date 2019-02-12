@@ -1,4 +1,4 @@
-package files
+package notes
 
 import (
 	"fmt"
@@ -8,10 +8,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-)
-
-const (
-	defaultEditor = "vim"
 )
 
 // Meta holds meta information for the local notes storage as a whole
