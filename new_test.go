@@ -2,7 +2,6 @@ package notes
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -47,12 +46,7 @@ func (d FakeDAL) GetNote(id int) (*files.Note, error) {
 		return nil, d.GetNoteError
 	}
 
-	note, exists := d.notes[id]
-	if !exists {
-		return nil, fmt.Errorf("no note with id \"%d\"", id)
-	}
-
-	return note, nil
+	return d.notes[id], nil
 }
 
 func (d FakeDAL) SaveNote(note *files.Note) error {
@@ -360,16 +354,28 @@ func TestNewNote(t *testing.T) {
 				t.Error(diff)
 			}
 
-			if err == nil {
-				savedNote, err := test.DAL.GetNote(note.Meta.ID)
-				if err != nil {
-					t.Errorf("test.DAL.GetNote failed: %s", err)
-					t.FailNow()
-				}
+			if err != nil {
+				return
+			}
 
-				if diff := deep.Equal(savedNote, test.ExpectedNote); diff != nil {
-					t.Error(diff)
-				}
+			savedNote, err := test.DAL.GetNote(note.Meta.ID)
+			if err != nil {
+				t.Errorf("test.DAL.GetNote failed: %s", err)
+				t.FailNow()
+			}
+
+			if diff := deep.Equal(savedNote, test.ExpectedNote); diff != nil {
+				t.Error(diff)
+			}
+
+			savedMeta, err := test.DAL.GetMeta()
+			if err != nil {
+				t.Errorf("test.DAL.GetMeta failed: %s", err)
+				t.FailNow()
+			}
+
+			if diff := deep.Equal(savedMeta, test.ExpectedMeta); diff != nil {
+				t.Error(diff)
 			}
 		})
 	}
