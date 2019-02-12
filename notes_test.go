@@ -14,7 +14,7 @@ type NoteBodyTest struct {
 func TestGetNoteBodyFromUser(t *testing.T) {
 	tests := []NoteBodyTest{
 		// TODO: add tests for failure cases
-		{"echo", "existing", "existing"},
+		// TODO: monkey patch os/exec
 	}
 
 	for _, test := range tests {
