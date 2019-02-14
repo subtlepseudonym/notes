@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -70,7 +71,7 @@ func lsAction(ctx *cli.Context) error {
 		limit = ctx.Int("num")
 	}
 
-	padAmount := len(meta.Notes)/16 + 1
+	padAmount := int(math.Log(float64(len(meta.Notes)))/math.Log(16.0) + 1.0)
 	idFormat := fmt.Sprintf("%% %dx", padAmount)
 
 	var listed int
