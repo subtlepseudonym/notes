@@ -72,7 +72,7 @@ func lsAction(ctx *cli.Context) error {
 	}
 
 	padAmount := int(math.Log(float64(len(meta.Notes)))/math.Log(16.0) + 1.0)
-	idFormat := fmt.Sprintf("%% %dx", padAmount)
+	idFormat := fmt.Sprintf(" %%%dx", padAmount)
 
 	var listed int
 	idx := meta.LatestID
