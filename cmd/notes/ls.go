@@ -51,6 +51,7 @@ var ls = cli.Command{
 			Value: defaultListColumnDelimiter,
 		},
 	},
+	UseShortOptionHandling: true,
 }
 
 func lsAction(ctx *cli.Context) error {
