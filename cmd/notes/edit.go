@@ -80,7 +80,11 @@ func editAction(ctx *cli.Context) error {
 	}
 
 	if changed {
-		note.Meta.Updated = append([]notes.JSONTime{{time.Now()}}, note.Meta.Updated...)[:updateHistoryLimit]
+		note.Meta.Updated = append([]notes.JSONTime{{time.Now()}}, note.Meta.Updated...)
+		if len(note.Meta.Updated) > updateHistoryLimit {
+			note.Meta.Updated = note.Meta.Updated[:updateHistoryLimit]
+		}
+
 		err = dal.SaveNote(note)
 		if err != nil {
 			return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
