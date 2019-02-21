@@ -12,6 +12,7 @@ import (
 
 var edit = cli.Command{
 	Name:      "edit",
+	ShortName: "e",
 	Usage:     "edit an existing note",
 	ArgsUsage: "noteID",
 	Action:    editAction,

@@ -15,9 +15,10 @@ const (
 )
 
 var newNote = cli.Command{
-	Name:   "new",
-	Usage:  "create a new note",
-	Action: newAction,
+	Name:      "new",
+	ShortName: "n",
+	Usage:     "create a new note",
+	Action:    newAction,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  "title, t",
