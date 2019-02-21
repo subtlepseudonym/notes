@@ -71,8 +71,8 @@ func newAction(ctx *cli.Context) error {
 		Meta: notes.NoteMeta{
 			ID:      newNoteID,
 			Title:   title,
-			Created: time.Now(),
-			Deleted: time.Unix(0, 0),
+			Created: notes.JSONTime{time.Now()},
+			Deleted: notes.JSONTime{time.Unix(0, 0)},
 		},
 		Body: body,
 	}

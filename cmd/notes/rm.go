@@ -56,7 +56,7 @@ func rmAction(ctx *cli.Context) error {
 
 		delete(meta.Notes, note.Meta.ID)
 	} else {
-		note.Meta.Deleted = time.Now()
+		note.Meta.Deleted.Time = time.Now()
 		err = dal.SaveNote(note)
 		if err != nil {
 			return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)

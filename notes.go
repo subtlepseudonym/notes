@@ -1,6 +1,7 @@
 package notes
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -17,13 +18,32 @@ type Meta struct {
 	Notes    map[int]NoteMeta `json:"notes"` // maps note ID to NoteMeta
 }
 
+type JSONTime struct {
+	time.Time
+}
+
+func (j JSONTime) MarshalJSON() ([]byte, error) {
+	return json.Marshal(j.UnixNano()) // FIXME: this will fail after 2262
+}
+
+func (j *JSONTime) UnmarshalJSON(b []byte) error {
+	var i int64
+	err := json.Unmarshal(b, &i)
+	if err != nil {
+		return err
+	}
+
+	j.Time = time.Unix(0, i)
+	return nil
+}
+
 // NoteMeta holds meta information for one note to make commands that only access
 // meta information perform faster
 type NoteMeta struct {
-	ID      int       `json:"id"` // incremented starting at 1
-	Title   string    `json:"title"`
-	Created time.Time `json:"created"`
-	Deleted time.Time `json:"deleted"`
+	ID      int      `json:"id"` // incremented starting at 1
+	Title   string   `json:"title"`
+	Created JSONTime `json:"created"`
+	Deleted JSONTime `json:"deleted"`
 }
 
 // Note includes the content of the note as well as its meta information as backup in

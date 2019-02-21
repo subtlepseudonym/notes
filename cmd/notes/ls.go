@@ -89,12 +89,12 @@ func lsAction(ctx *cli.Context) error {
 		fields = append(fields, fmt.Sprintf(idFormat, note.ID))
 
 		if ctx.Bool("deleted") {
-			if time.Unix(0, 0).Equal(note.Deleted) {
+			if time.Unix(0, 0).Equal(note.Deleted.Time) {
 				fields = append(fields, " ")
 			} else {
 				fields = append(fields, "d")
 			}
-		} else if !time.Unix(0, 0).Equal(note.Deleted) {
+		} else if !time.Unix(0, 0).Equal(note.Deleted.Time) {
 			continue
 		}
 

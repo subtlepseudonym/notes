@@ -62,8 +62,8 @@ func editAction(ctx *cli.Context) error {
 	}
 	note.Body = body
 
-	if !time.Unix(0, 0).Equal(note.Meta.Deleted) {
-		note.Meta.Deleted = time.Unix(0, 0) // restore soft deleted notes
+	if !time.Unix(0, 0).Equal(note.Meta.Deleted.Time) {
+		note.Meta.Deleted.Time = time.Unix(0, 0) // restore soft deleted notes
 	}
 
 	if ctx.String("title") != "" {
