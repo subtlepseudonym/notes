@@ -10,6 +10,8 @@ import (
 	"github.com/urfave/cli"
 )
 
+const updateHistoryLimit = 16
+
 var edit = cli.Command{
 	Name:      "edit",
 	ShortName: "e",
@@ -61,31 +63,29 @@ func editAction(ctx *cli.Context) error {
 		return cli.NewExitError(errors.Wrap(err, "get note body from user failed"), 1)
 	}
 
-	var bodyChanged bool
+	var changed bool
 	if note.Body != body {
 		note.Body = body
-		bodyChanged = true
+		changed = true
 	}
 
-	var metaChanged bool
 	if !time.Unix(0, 0).Equal(note.Meta.Deleted.Time) {
 		note.Meta.Deleted.Time = time.Unix(0, 0) // restore soft deleted notes
-		metaChanged = true
+		changed = true
 	}
 
 	if ctx.String("title") != "" {
 		note.Meta.Title = ctx.String("title")
-		metaChanged = true
+		changed = true
 	}
 
-	if bodyChanged || metaChanged {
+	if changed {
+		note.Meta.Updated = append([]notes.JSONTime{{time.Now()}}, note.Meta.Updated...)[:updateHistoryLimit]
 		err = dal.SaveNote(note)
 		if err != nil {
 			return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
 		}
-	}
 
-	if metaChanged {
 		meta.Notes[note.Meta.ID] = note.Meta
 		err = dal.SaveMeta(meta)
 		if err != nil {

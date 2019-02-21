@@ -40,10 +40,11 @@ func (j *JSONTime) UnmarshalJSON(b []byte) error {
 // NoteMeta holds meta information for one note to make commands that only access
 // meta information perform faster
 type NoteMeta struct {
-	ID      int      `json:"id"` // incremented starting at 1
-	Title   string   `json:"title"`
-	Created JSONTime `json:"created"`
-	Deleted JSONTime `json:"deleted"`
+	ID      int        `json:"id"` // incremented starting at 1
+	Title   string     `json:"title"`
+	Created JSONTime   `json:"created"`
+	Updated []JSONTime `json:"updated"`
+	Deleted JSONTime   `json:"deleted"`
 }
 
 // Note includes the content of the note as well as its meta information as backup in
