@@ -7,8 +7,11 @@ import (
 	"github.com/urfave/cli"
 )
 
-// Version is set at compile time
-var Version = "v0.0.0"
+// Set at compile time
+var (
+	Version  = "v0.0.0"
+	Revision = "git_revision"
+)
 
 const defaultEditor = "vim"
 
@@ -36,11 +39,18 @@ func main() {
 		newNote,
 		rm,
 		edit,
+		info,
 	}
 
 	app.CommandNotFound = func(ctx *cli.Context, cmd string) {
 		fmt.Fprintf(ctx.App.ErrWriter, "command %q not found", cmd)
 		os.Exit(1)
+	}
+
+	app.ExtraInfo = func() map[string]string {
+		return map[string]string{
+			"revision": Revision,
+		}
 	}
 
 	err := app.Run(os.Args)

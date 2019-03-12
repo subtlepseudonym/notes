@@ -1,7 +1,9 @@
 BINARY=notes
+
 VERSION=`git describe --abbrev=0`
 BUILD=$$(cat build)
-LDFLAGS=--ldflags "-X main.Version=${VERSION}+${BUILD}"
+REVISION=`git describe | cut -f 3 -d "-"`
+LDFLAGS=--ldflags "-X main.Version=${VERSION}+${BUILD} -X main.Revision=${REVISION}"
 
 NEW_BUILD=$$(($(BUILD) + 1))
 
