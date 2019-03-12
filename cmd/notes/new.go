@@ -49,11 +49,6 @@ func newAction(ctx *cli.Context) error {
 		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
 	}
 
-	body, err := notes.GetNoteBodyFromUser(ctx.String("editor"), "")
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get body from user failed"), 1)
-	}
-
 	meta, err := dal.GetMeta()
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get meta failed"), 1)
@@ -74,8 +69,13 @@ func newAction(ctx *cli.Context) error {
 			Created: notes.JSONTime{time.Now()},
 			Deleted: notes.JSONTime{time.Unix(0, 0)},
 		},
-		Body: body,
 	}
+
+	body, err := notes.GetNoteBodyFromUser(ctx.String("editor"), "")
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "get body from user failed"), 1)
+	}
+	note.Body = body
 
 	err = dal.SaveNote(note)
 	if err != nil {

@@ -58,17 +58,7 @@ func editAction(ctx *cli.Context) error {
 		return cli.NewExitError(errors.Wrap(err, "get note failed"), 1)
 	}
 
-	body, err := notes.GetNoteBodyFromUser(ctx.String("editor"), note.Body)
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get note body from user failed"), 1)
-	}
-
 	var changed bool
-	if note.Body != body {
-		note.Body = body
-		changed = true
-	}
-
 	if !time.Unix(0, 0).Equal(note.Meta.Deleted.Time) {
 		note.Meta.Deleted.Time = time.Unix(0, 0) // restore soft deleted notes
 		changed = true
@@ -76,6 +66,16 @@ func editAction(ctx *cli.Context) error {
 
 	if ctx.String("title") != "" {
 		note.Meta.Title = ctx.String("title")
+		changed = true
+	}
+
+	body, err := notes.GetNoteBodyFromUser(ctx.String("editor"), note.Body)
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "get note body from user failed"), 1)
+	}
+
+	if note.Body != body {
+		note.Body = body
 		changed = true
 	}
 
