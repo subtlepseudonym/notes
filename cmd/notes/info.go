@@ -109,9 +109,9 @@ func printNoteInfo(ctx *cli.Context, meta *notes.Meta, note *notes.Note) error {
 	}
 
 	if note.Meta.History != nil {
-		rows = append(rows, []string{"history", fmt.Sprintf("%s @ %s", note.Meta.History[0], note.Meta.History[1])})
+		rows = append(rows, []string{"history", fmt.Sprintf("%s @ %d bytes", note.Meta.History[0].Updated.Format(time.RFC3339), note.Meta.History[0].Size)})
 		for i := 1; i < len(note.Meta.History); i++ {
-			rows = append(rows, []string{"", fmt.Sprintf("%s @ %s", note.Meta.History[0], note.Meta.History[1])})
+			rows = append(rows, []string{"", fmt.Sprintf("%s @ %d bytes", note.Meta.History[i].Updated.Format(time.RFC3339), note.Meta.History[i].Size)})
 		}
 	}
 
