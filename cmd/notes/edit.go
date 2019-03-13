@@ -79,22 +79,39 @@ func editAction(ctx *cli.Context) error {
 		changed = true
 	}
 
-	if changed {
-		note.Meta.Updated = append([]notes.JSONTime{{time.Now()}}, note.Meta.Updated...)
-		if len(note.Meta.Updated) > updateHistoryLimit {
-			note.Meta.Updated = note.Meta.Updated[:updateHistoryLimit]
-		}
+	if !changed {
+		return nil
+	}
 
-		err = dal.SaveNote(note)
-		if err != nil {
-			return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
-		}
+	noteSize, err := note.ApproxSize()
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "get note size failed"), 1)
+	}
 
-		meta.Notes[note.Meta.ID] = note.Meta
-		err = dal.SaveMeta(meta)
-		if err != nil {
-			return cli.NewExitError(errors.Wrap(err, "save meta failed"), 1)
-		}
+	update := notes.EditHistory{
+		Updated: notes.JSONTime{time.Now()},
+		Size:    noteSize,
+	}
+	note.Meta.History = append([]notes.EditHistory{update}, note.Meta.History...)
+	if len(note.Meta.History) > updateHistoryLimit {
+		note.Meta.History = note.Meta.History[:updateHistoryLimit]
+	}
+
+	err = dal.SaveNote(note)
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
+	}
+
+	metaSize, err := meta.ApproxSize()
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "get meta size failed"), 1)
+	}
+
+	meta.Size = metaSize
+	meta.Notes[note.Meta.ID] = note.Meta
+	err = dal.SaveMeta(meta)
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "save meta failed"), 1)
 	}
 
 	return nil

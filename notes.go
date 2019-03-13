@@ -15,7 +15,21 @@ import (
 type Meta struct {
 	Version  string           `json:"version"`
 	LatestID int              `json:"latestId"`
+	Size     int              `json:"size"`  // meta file size in bytes
 	Notes    map[int]NoteMeta `json:"notes"` // maps note ID to NoteMeta
+}
+
+// ApproxSize gets the approximate encoded size of the meta object by
+// encoding it and returning its byte length
+// NOTE: This will be off by the byte length of one numeric character as
+// compared to its size on disk when used via the nts cli
+func (m Meta) ApproxSize() (int, error) {
+	b, err := json.Marshal(m)
+	if err != nil {
+		return 0, errors.Wrap(err, "encode meta failed")
+	}
+
+	return len(b), nil
 }
 
 type JSONTime struct {
@@ -40,11 +54,17 @@ func (j *JSONTime) UnmarshalJSON(b []byte) error {
 // NoteMeta holds meta information for one note to make commands that only access
 // meta information perform faster
 type NoteMeta struct {
-	ID      int        `json:"id"` // incremented starting at 1
-	Title   string     `json:"title"`
-	Created JSONTime   `json:"created"`
-	Updated []JSONTime `json:"updated"`
-	Deleted JSONTime   `json:"deleted"`
+	ID      int           `json:"id"` // incremented starting at 1
+	Title   string        `json:"title"`
+	Created JSONTime      `json:"created"`
+	Deleted JSONTime      `json:"deleted"`
+	History []EditHistory `json:"history"`
+}
+
+// EditHistory holds meta information that changes over time
+type EditHistory struct {
+	Updated JSONTime `json:"updated"`
+	Size    int      `json:"size"` // file size in bytes
 }
 
 // Note includes the content of the note as well as its meta information as backup in
@@ -52,6 +72,20 @@ type NoteMeta struct {
 type Note struct {
 	Meta NoteMeta `json:"meta"`
 	Body string   `json:"body"`
+}
+
+// ApproxSize gets the approximate encoded size of the note object by encoding
+// it and returning its byte length
+// NOTE: This is likely to be a bit lower than the actual size on disk because it is
+// intended for use with the nts cli, which alters the note's edit history before
+// encoding and saving it to disk
+func (n Note) ApproxSize() (int, error) {
+	b, err := json.Marshal(n)
+	if err != nil {
+		return 0, errors.Wrap(err, "encode note failed")
+	}
+
+	return len(b), nil
 }
 
 // GetNoteBodyFromUser drops the user into the provided editor command before
