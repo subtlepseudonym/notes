@@ -77,6 +77,13 @@ func newAction(ctx *cli.Context) error {
 	}
 	note.Body = body
 
+	// TODO: add option to not append edit to history
+	n, err := note.AppendEdit(time.Now())
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "append edit to note history failed"), 1)
+	}
+	note = n
+
 	err = dal.SaveNote(note)
 	if err != nil {
 		// FIXME: persist the note somewhere if saving it fails

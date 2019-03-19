@@ -10,8 +10,6 @@ import (
 	"github.com/urfave/cli"
 )
 
-const updateHistoryLimit = 16
-
 var edit = cli.Command{
 	Name:      "edit",
 	ShortName: "e",
@@ -83,19 +81,12 @@ func editAction(ctx *cli.Context) error {
 		return nil
 	}
 
-	noteSize, err := note.ApproxSize()
+	// TODO: add option to not append edit to history
+	n, err := note.AppendEdit(time.Now())
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get note size failed"), 1)
+		return cli.NewExitError(errors.Wrap(err, "append edit to note history failed"), 1)
 	}
-
-	update := notes.EditHistory{
-		Updated: notes.JSONTime{time.Now()},
-		Size:    noteSize,
-	}
-	note.Meta.History = append([]notes.EditHistory{update}, note.Meta.History...)
-	if len(note.Meta.History) > updateHistoryLimit {
-		note.Meta.History = note.Meta.History[:updateHistoryLimit]
-	}
+	note = n
 
 	err = dal.SaveNote(note)
 	if err != nil {
