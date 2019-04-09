@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const defaultEditHistorySize = 16
+
 // Meta holds meta information for the local notes storage as a whole
 type Meta struct {
 	Version  string           `json:"version"`
@@ -86,6 +88,26 @@ func (n Note) ApproxSize() (int, error) {
 	}
 
 	return len(b), nil
+}
+
+// AppendEdit adds a new EditHistory to the note's history, trimming if the history
+// exceeds the edit history size limit
+func (n *Note) AppendEdit(timestamp time.Time) (*Note, error) {
+	noteSize, err := n.ApproxSize()
+	if err != nil {
+		return n, errors.Wrap(err, "get note size failed")
+	}
+
+	update := EditHistory{
+		Updated: JSONTime{time.Now()},
+		Size:    noteSize,
+	}
+	n.Meta.History = append([]EditHistory{update}, n.Meta.History...)
+	if len(n.Meta.History) > defaultEditHistorySize {
+		n.Meta.History = n.Meta.History[:defaultEditHistorySize]
+	}
+
+	return n, nil
 }
 
 // GetNoteBodyFromUser drops the user into the provided editor command before

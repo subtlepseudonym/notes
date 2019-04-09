@@ -35,6 +35,10 @@ var ls = cli.Command{
 			Name:  "deleted, d",
 			Usage: "show soft deleted notes",
 		},
+		cli.BoolFlag{
+			Name:  "reverse, r",
+			Usage: "list notes in reverse order",
+		},
 		cli.IntFlag{
 			Name:  "num, n",
 			Usage: "number of notes to display",
@@ -78,6 +82,7 @@ func lsAction(ctx *cli.Context) error {
 	var listed int
 	idx := meta.LatestID
 
+	var noteList []string
 	for listed < limit && idx >= 0 {
 		note, exists := meta.Notes[idx]
 		idx--
@@ -108,8 +113,18 @@ func lsAction(ctx *cli.Context) error {
 
 		fields = append(fields, note.Title)
 
-		fmt.Fprintln(ctx.App.Writer, strings.Join(fields, ctx.String("delimiter")))
+		noteList = append(noteList, strings.Join(fields, ctx.String("delimiter")))
 		listed++
+	}
+
+	if ctx.Bool("reverse") {
+		for l, r := 0, len(noteList)-1; l < r; l, r = l+1, r-1 {
+			noteList[l], noteList[r] = noteList[r], noteList[l]
+		}
+	}
+
+	for _, note := range noteList {
+		fmt.Fprintln(ctx.App.Writer, note)
 	}
 
 	return nil
