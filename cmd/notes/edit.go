@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -8,6 +9,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+)
+
+const (
+	defaultLatestDepth = 5 // default number of IDs to search for latest note
 )
 
 var edit = cli.Command{
@@ -27,6 +32,11 @@ var edit = cli.Command{
 			Usage:  "text editor command",
 			Value:  defaultEditor,
 			EnvVar: "EDTIOR",
+		},
+		cli.IntFlag{
+			Name: "latest-depth",
+			Usage: "number of IDs to search from latest ID to find latest note",
+			Value: defaultLatestDepth,
 		},
 	},
 }
@@ -50,7 +60,17 @@ func editAction(ctx *cli.Context) error {
 		}
 		noteID = int(noteID64)
 	} else {
-		noteID = meta.LatestID
+		for i := 0; i < ctx.Int("latest-depth"); i++ {
+			if _, exists := meta.Notes[meta.LatestID - i]; exists {
+				noteID = meta.LatestID - i
+				break
+			}
+		}
+	}
+
+	if noteID == 0 {
+		// FIXME: may want to log a note that this is based upon content of the meta rather than a DAL existence check
+		return cli.NewExitError(errors.New(fmt.Sprintf("latest note ID ⊄ [%d,%d], try using noteID argument or --latest-depth", meta.LatestID - ctx.Int("latest-depth"), meta.LatestID)), 1)
 	}
 
 	note, err := dal.GetNote(noteID)
