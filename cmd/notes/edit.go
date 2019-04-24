@@ -14,7 +14,8 @@ var edit = cli.Command{
 	Name:      "edit",
 	ShortName: "e",
 	Usage:     "edit an existing note",
-	ArgsUsage: "noteID",
+	Description: "Open a note for editing, as specified by the <noteID> argument. If no argument is provided, notes will open the most recently created note for editing",
+	ArgsUsage: "[<noteID>]",
 	Action:    editAction,
 	Flags: []cli.Flag{
 		cli.StringFlag{
