@@ -42,17 +42,18 @@ func editAction(ctx *cli.Context) error {
 		return cli.NewExitError(errors.Wrap(err, "get meta failed"), 1)
 	}
 
-	var noteID int64
+	var noteID int
 	if ctx.Args().First() != "" {
-		noteID, err = strconv.ParseInt(ctx.Args().First(), 16, 64)
+		noteID64, err := strconv.ParseInt(ctx.Args().First(), 16, 64)
 		if err != nil {
 			return cli.NewExitError(errors.Wrap(err, "parse base 16 noteID argument failed"), 1)
 		}
+		noteID = int(noteID64)
 	} else {
-		noteID = int64(meta.LatestID)
+		noteID = meta.LatestID
 	}
 
-	note, err := dal.GetNote(int(noteID))
+	note, err := dal.GetNote(noteID)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get note failed"), 1)
 	}
