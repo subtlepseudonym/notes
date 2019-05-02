@@ -16,12 +16,12 @@ const (
 )
 
 var edit = cli.Command{
-	Name:      "edit",
-	ShortName: "e",
-	Usage:     "edit an existing note",
+	Name:        "edit",
+	ShortName:   "e",
+	Usage:       "edit an existing note",
 	Description: "Open a note for editing, as specified by the <noteID> argument. If no argument is provided, notes will open the most recently created note for editing",
-	ArgsUsage: "[<noteID>]",
-	Action:    editAction,
+	ArgsUsage:   "[<noteID>]",
+	Action:      editAction,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  "title, t",
@@ -34,7 +34,7 @@ var edit = cli.Command{
 			EnvVar: "EDTIOR",
 		},
 		cli.IntFlag{
-			Name: "latest-depth",
+			Name:  "latest-depth",
 			Usage: "number of IDs to search from latest ID to find latest note",
 			Value: defaultLatestDepth,
 		},
@@ -61,7 +61,7 @@ func editAction(ctx *cli.Context) error {
 		noteID = int(noteID64)
 	} else {
 		for i := 0; i < ctx.Int("latest-depth"); i++ {
-			if _, exists := meta.Notes[meta.LatestID - i]; exists {
+			if _, exists := meta.Notes[meta.LatestID-i]; exists {
 				noteID = meta.LatestID - i
 				break
 			}
@@ -70,7 +70,7 @@ func editAction(ctx *cli.Context) error {
 
 	if noteID == 0 {
 		// FIXME: may want to log a note that this is based upon content of the meta rather than a DAL existence check
-		return cli.NewExitError(errors.New(fmt.Sprintf("latest note ID ⊄ [%d,%d], try using noteID argument or --latest-depth", meta.LatestID - ctx.Int("latest-depth"), meta.LatestID)), 1)
+		return cli.NewExitError(errors.New(fmt.Sprintf("latest note ID ⊄ [%d,%d], try using noteID argument or --latest-depth", meta.LatestID-ctx.Int("latest-depth"), meta.LatestID)), 1)
 	}
 
 	note, err := dal.GetNote(noteID)

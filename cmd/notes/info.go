@@ -19,7 +19,7 @@ var info = cli.Command{
 	Name:        "info",
 	Usage:       "print info",
 	Description: "This command gets information about the app binary, the meta file, or specific note files and prints it in a human-friendly format. These are specified by providing no arguments, the \"meta\" argument, or a noteID respectively",
-	ArgsUsage: "[meta | <noteID>]",
+	ArgsUsage:   "[meta | <noteID>]",
 	Action:      infoAction,
 }
 
