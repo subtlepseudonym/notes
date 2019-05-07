@@ -6,6 +6,9 @@ import (
 	"bou.ke/monkey"
 )
 
+func TestNoteAppendEdit(t *testing.T) {
+}
+
 type NoteBodyTest struct {
 	EditorCommand string
 	ExistingBody  string
