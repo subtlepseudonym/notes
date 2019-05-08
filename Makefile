@@ -1,17 +1,13 @@
 BINARY=notes
 
-VERSION=`git describe --abbrev=0`
-BUILD=$$(cat build)
-REVISION=`git describe | cut -f 3 -d "-"`
-LDFLAGS=--ldflags "-X main.Version=${VERSION}+${BUILD} -X main.Revision=${REVISION}"
-
-NEW_BUILD=$$(($(BUILD) + 1))
+BUILD=$$(bash build-tag.sh)
+REVISION=`git rev-list -n1 HEAD`
+LDFLAGS=--ldflags "-X main.Version=${BUILD} -X main.Revision=${REVISION}"
 
 all: test build
 
 build: format
 	go build ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
-	echo $(NEW_BUILD) > ./build
 
 test:
 	gotest --race -v ./...
