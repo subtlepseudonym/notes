@@ -7,6 +7,7 @@ for line in $(git diff-files --numstat); do
 	add=$(($add + $(echo $line | cut -f1)))
 	del=$(($del + $(echo $line | cut -f2)))
 done
+untracked=$(git ls-files --others --exclude-standard | wc -l | tr -d " ")
 
 version=$(git describe --abbrev=0)
 short_rev=$(git rev-list -n1 --abbrev-commit HEAD)
@@ -18,6 +19,7 @@ echo "" | awk \
 	-v rev_name="${rev_name}" \
 	-v add="${add}" \
 	-v del="${del}" \
+	-v untracked="${untracked}" \
 '{
 	fmt="%s"
 	build_added=0
@@ -35,6 +37,12 @@ echo "" | awk \
 		if (build_added) { fmt = fmt "." }
 		else { fmt = fmt "+" }
 		fmt = fmt "d" del
+		build_added=1
+	}
+	if (untracked != 0) {
+		if (build_added) { fmt = fmt "." }
+		else { fmt = fmt "+" }
+		fmt = fmt "u" untracked
 		build_added=1
 	}
 	printf fmt, version, add, del
