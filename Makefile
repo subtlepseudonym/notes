@@ -1,6 +1,7 @@
 BINARY=notes
 
 BUILD=$$(bash build-tag.sh)
+
 REVISION=`git rev-list -n1 HEAD`
 LDFLAGS=--ldflags "-X main.Version=${BUILD} -X main.Revision=${REVISION}"
 

@@ -8,4 +8,12 @@ for line in $(git diff-files --numstat); do
 	del=$(($del + $(echo $line | cut -f2)))
 done
 
-git describe --abbrev=8 | tr -d g | cut -f1,3 -d- | tr - + | awk -v add="${add}" -v del="${del}" '{ printf("%s.a%s.d%s", $1, add, del) }'
+version=$(git describe --abbrev=0)
+short_rev=$(git rev-list -n1 --abbrev-commit HEAD)
+
+echo "" | awk -v version="${version}" -v add="${add}" -v del="${del}" '{
+	fmt="%s"
+	if (add != 0) { fmt = fmt ".a" add }
+	if (del != 0) { fmt = fmt ".d" del }
+	printf fmt, version, add, del
+}'
