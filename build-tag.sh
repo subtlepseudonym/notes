@@ -10,18 +10,18 @@ done
 
 version=$(git describe --abbrev=0)
 short_rev=$(git rev-list -n1 --abbrev-commit HEAD)
-branch=$(git name-rev --name-only HEAD)
+rev_name=$(git name-rev --name-only HEAD)
 
 echo "" | awk \
 	-v version="${version}" \
 	-v short_rev="${short_rev}" \
-	-v branch="${branch}" \
+	-v rev_name="${rev_name}" \
 	-v add="${add}" \
 	-v del="${del}" \
 '{
 	fmt="%s"
 	build_added=0
-	if (branch != "master") {
+	if (rev_name !~ /tags.*\^0/) {
 		fmt = fmt "+" short_rev
 		build_added=1
 	}
