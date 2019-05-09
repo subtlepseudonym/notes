@@ -23,3 +23,6 @@ clean:
 	go mod tidy
 	go clean
 	rm -f $(GOBINARY)
+
+get-tag:
+	echo ${BUILD}
