@@ -19,31 +19,25 @@ echo "" | awk \
 	-v rev_name="${rev_name}" \
 	-v add="${add}" \
 	-v del="${del}" \
-	-v untracked="${untracked}" \
-'{
-	fmt="%s"
-	build_added=0
+	-v utd="${untracked}" \
+'
+function add_change(tag, count){
+	if (!build_added) { v = v "+" }
+	else if (!changes_added) { v = v "." }
+	v = v tag count
+	build_added=1
+	changes_added=1
+}
+
+{
+	v=version
 	if (rev_name !~ /tags.*\^0/) {
-		fmt = fmt "+" short_rev
+		v = v "+" short_rev
 		build_added=1
 	}
-	if (add != 0) {
-		if (build_added) { fmt = fmt "." }
-		else { fmt = fmt "+" }
-		fmt = fmt "a" add
-		build_added=1
-	}
-	if (del != 0) {
-		if (build_added) { fmt = fmt "." }
-		else { fmt = fmt "+" }
-		fmt = fmt "d" del
-		build_added=1
-	}
-	if (untracked != 0) {
-		if (build_added) { fmt = fmt "." }
-		else { fmt = fmt "+" }
-		fmt = fmt "u" untracked
-		build_added=1
-	}
-	printf fmt, version, add, del
-}'
+	if (add != 0) { add_change("a", add) }
+	if (del != 0) { add_change("d", del) }
+	if (utd != 0) { add_change("u", utd) }
+	printf v
+}
+'
