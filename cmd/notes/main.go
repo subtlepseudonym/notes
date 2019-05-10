@@ -2,16 +2,22 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/chzyer/readline"
+	"github.com/kballard/go-shellquote"
+	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
 // Set at compile time
 var (
-	Version  = "v0.0.0"
-	Revision = "git_revision"
+	Version       = "v0.0.0"
+	Revision      = "git_revision"
+	inInteractive = false
 )
 
 const (
@@ -38,6 +44,7 @@ func main() {
 	app.EnableBashCompletion = true
 	app.ErrWriter = os.Stderr
 
+	app.Action = mainAction
 	app.Commands = []cli.Command{
 		ls,
 		newNote,
@@ -64,31 +71,74 @@ func main() {
 	}
 }
 
-func mainAction(ctx *cli.Context) {
-	dal, err := notes.NewDefaultDAL(Version) // FIXME: option to use different dal
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
+func mainAction(ctx *cli.Context) error {
+	if inInteractive {
+		return nil
+	} else {
+		inInteractive = true
 	}
 
-	config := *readline.Config{
-		Prompt:       ctx.App.Name + "> ",
-		HistoryFile:  dal.notesDirectoryPath + "/" + historyFilePath,
+	historyFile, err := ioutil.TempFile("", ".nts_history") // FIXME: update history file in dal periodically
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "create history temp file failed"), 1)
+	}
+	historyPath, err := filepath.Abs(historyFile.Name())
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "get history file path failed"), 1)
+	}
+
+	config := &readline.Config{
+		Prompt:            ctx.App.Name + "> ",
+		HistoryFile:       historyPath,
 		HistorySearchFold: true,
-		Autocomplete: readline.NewPrefixCompleter(buildPrefixCompleter(ctx.App.Commands)),
-		InterruptPrompt: "^C",
-		EOFPrompt: "exit",
+		AutoComplete:      readline.NewPrefixCompleter(buildPrefixCompleter(ctx.App.Commands)),
+		InterruptPrompt:   "^C",
+		EOFPrompt:         "exit",
 	}
 
 	reader, err := readline.NewEx(config)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "create reader failed"), 1)
 	}
+
+	for {
+		line, err := reader.Readline()
+		if err == readline.ErrInterrupt {
+			if len(line) == 0 {
+				break
+			} else {
+				continue
+			}
+		} else if err == io.EOF {
+			fmt.Println("EOF")
+			break
+		} else if err != nil { // As of readline@2972be2 err will only ever be readline.ErrInterrupt, io.EOF, nil
+			return cli.NewExitError(errors.Wrap(err, "read line failed"), 1)
+		}
+
+		if line == "exit" {
+			break
+		}
+
+		args, err := shellquote.Split(line)
+		if err != nil {
+			return cli.NewExitError(errors.Wrap(err, "shellquote split failed"), 1)
+		}
+
+		err = ctx.App.Run(append([]string{ctx.App.Name}, args...))
+		if err != nil {
+			return cli.NewExitError(errors.Wrap(err, "app run failed"), 1)
+		}
+	}
+
+	return nil
 }
 
-func buildPrefixCompleter(cmds []cli.Command) []readline.PrefixCompleter {
-	var completers []readline.PrefixCompleter
+func buildPrefixCompleter(cmds []cli.Command) *readline.PrefixCompleter {
+	completer := &readline.PrefixCompleter{}
 	for _, cmd := range cmds {
-		completers = append(completers, readline.PcItem(cmd.Name, buildPrefixCompleter([]cli.Command(cmd.Subcommands))))
+		completer.Children = append(completer.Children, readline.PcItem(cmd.Name, buildPrefixCompleter([]cli.Command(cmd.Subcommands))))
 	}
-	return completers
+
+	return completer
 }
