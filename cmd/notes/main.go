@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/chzyer/readline"
 	"github.com/urfave/cli"
 )
 
@@ -13,7 +14,10 @@ var (
 	Revision = "git_revision"
 )
 
-const defaultEditor = "vim"
+const (
+	defaultEditor   = "vim"
+	historyFilePath = ".nts_history"
+)
 
 func main() {
 	os.Setenv("_CLI_ZSH_AUTOCOMPLETE_HACK", "1")
@@ -58,4 +62,33 @@ func main() {
 		fmt.Fprintf(os.Stderr, "runtime error: %s", err)
 		os.Exit(1)
 	}
+}
+
+func mainAction(ctx *cli.Context) {
+	dal, err := notes.NewDefaultDAL(Version) // FIXME: option to use different dal
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
+	}
+
+	config := *readline.Config{
+		Prompt:       ctx.App.Name + "> ",
+		HistoryFile:  dal.notesDirectoryPath + "/" + historyFilePath,
+		HistorySearchFold: true,
+		Autocomplete: readline.NewPrefixCompleter(buildPrefixCompleter(ctx.App.Commands)),
+		InterruptPrompt: "^C",
+		EOFPrompt: "exit",
+	}
+
+	reader, err := readline.NewEx(config)
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "create reader failed"), 1)
+	}
+}
+
+func buildPrefixCompleter(cmds []cli.Command) []readline.PrefixCompleter {
+	var completers []readline.PrefixCompleter
+	for _, cmd := range cmds {
+		completers = append(completers, readline.PcItem(cmd.Name, buildPrefixCompleter([]cli.Command(cmd.Subcommands))))
+	}
+	return completers
 }
