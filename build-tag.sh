@@ -7,7 +7,7 @@ for line in $(git diff-files --numstat); do
 	add=$(($add + $(echo $line | cut -f1)))
 	del=$(($del + $(echo $line | cut -f2)))
 done
-untracked=$(wc -l $(git ls-files --others --exclude-standard) | grep total | tr -s " " | cut -f2 -d" ")
+untracked=$(git ls-files --others --exclude-standard | wc -l | grep total | tr -s " " | cut -f2 -d" ")
 
 version=$(git describe --abbrev=0)
 short_rev=$(git rev-list -n1 --abbrev-commit HEAD)
