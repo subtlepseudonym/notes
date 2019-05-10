@@ -1,18 +1,17 @@
-package dal
+package dalpkg
 
 import (
-	"os"
+	"io/ioutil"
 	"time"
 
-	"github.com/subtlepseudonym/notes"
-
 	"github.com/pkg/errors"
+	"github.com/subtlepseudonym/notes"
 )
 
 // WatchAndUpdate periodically reads the contents of the provided file and compares
 // it to the body of the provided note. If they aren't equal, it saves the changes
 // to the DAL
-func WatchAndUpdate(dal DAL, note *notes.Note, file os.File, period time.Duration, stop chan struct{}) error {
+func WatchAndUpdate(dal DAL, note *notes.Note, filename string, period time.Duration, stop chan struct{}) error {
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
 
@@ -20,14 +19,14 @@ func WatchAndUpdate(dal DAL, note *notes.Note, file os.File, period time.Duratio
 		select {
 		case <-stop:
 			break
-		case timestamp <-ticker.C:
-			b, err := ioutilReadAll(file)
+		case timestamp := <-ticker.C:
+			b, err := ioutil.ReadFile(filename)
 			if err != nil {
-				return errors.Wrap(err, "read file failed")
+				return errors.Wrap(err, "read file failed") // FIXME: might want to log these rather than returning
 			}
 
 			fileContents := string(b)
-			if note.Body = fileContents {
+			if note.Body == fileContents {
 				continue
 			}
 

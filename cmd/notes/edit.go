@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strconv"
 	"time"
 
@@ -43,7 +44,7 @@ var edit = cli.Command{
 }
 
 func editAction(ctx *cli.Context) error {
-	dal, err := dal.NewDefaultDAL(Version) // FIXME: add option for different dal
+	dal, err := dalpkg.NewDefaultDAL(Version) // FIXME: add option for different dal
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
 	}
@@ -90,11 +91,26 @@ func editAction(ctx *cli.Context) error {
 		changed = true
 	}
 
-	body, err := notes.GetNoteBodyFromUser(ctx.String("editor"), note.Body)
+	file, err := ioutil.TempFile("", "note")
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "create temp file failed"), 1)
+	}
+	defer file.Close()
+
+	stopChan := make(chan struct{})
+	go func() {
+		err := dalpkg.WatchAndUpdate(dal, note, file.Name(), ctx.Duration("update-period"), stopChan)
+		if err != nil {
+			// FIXME: do something with this error
+		}
+	}()
+
+	body, err := notes.GetNoteBodyFromUser(file, ctx.String("editor"), note.Body)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get note body from user failed"), 1)
 	}
 
+	stopChan <- struct{}{}
 	if note.Body != body {
 		note.Body = body
 		changed = true

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/chzyer/readline"
 	"github.com/kballard/go-shellquote"
@@ -22,8 +23,9 @@ var (
 )
 
 const (
-	defaultEditor   = "vim"
-	historyFilePath = ".nts_history"
+	defaultEditor       = "vim"
+	defaultUpdatePeriod = 5 * time.Minute
+	historyFilePath     = ".nts_history"
 )
 
 func main() {

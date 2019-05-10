@@ -112,14 +112,8 @@ func (n *Note) AppendEdit(timestamp time.Time) (*Note, error) {
 
 // GetNoteBodyFromUser drops the user into the provided editor command before
 // retrieving the contents of the edited file
-func GetNoteBodyFromUser(editor, existingBody string) (string, error) {
-	file, err := ioutil.TempFile("", "note")
-	if err != nil {
-		return "", errors.Wrap(err, "create temporary file failed")
-	}
-	defer file.Close()
-
-	_, err = fmt.Fprint(file, existingBody)
+func GetNoteBodyFromUser(file *os.File, editor, existingBody string) (string, error) {
+	_, err := fmt.Fprint(file, existingBody)
 	if err != nil {
 		return "", errors.Wrap(err, "print existing body to temporary file failed")
 	}
@@ -138,5 +132,5 @@ func GetNoteBodyFromUser(editor, existingBody string) (string, error) {
 		return "", errors.Wrap(err, "read temporary file failed")
 	}
 
-	return string(bodyBytes), errors.Wrap(file.Close(), "close temporary file failed")
+	return string(bodyBytes), nil
 }

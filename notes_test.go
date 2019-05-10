@@ -1,6 +1,7 @@
 package notes
 
 import (
+	"io/ioutil"
 	"testing"
 )
 
@@ -18,7 +19,12 @@ func TestGetNoteBodyFromUser(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		body, err := GetNoteBodyFromUser(test.EditorCommand, test.ExistingBody)
+		editFile, err := ioutil.TempFile("", "test")
+		if err != nil {
+			t.Error(err)
+		}
+
+		body, err := GetNoteBodyFromUser(editFile, test.EditorCommand, test.ExistingBody)
 		if err != nil {
 			t.Error(err)
 		}

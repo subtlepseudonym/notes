@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"time"
 
 	"github.com/subtlepseudonym/notes"
@@ -41,11 +42,16 @@ var newNote = cli.Command{
 			Usage: "default title time location",
 			Value: defaultDateTitleLocation,
 		},
+		cli.DurationFlag{
+			Name:  "update-period",
+			Usage: "automatic note update period",
+			Value: defaultUpdatePeriod,
+		},
 	},
 }
 
 func newAction(ctx *cli.Context) error {
-	dal, err := dal.NewDefaultDAL(Version) // FIXME: option to use different dal
+	dal, err := dalpkg.NewDefaultDAL(Version) // FIXME: option to use different dal
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
 	}
@@ -72,11 +78,27 @@ func newAction(ctx *cli.Context) error {
 		},
 	}
 
-	body, err := notes.GetNoteBodyFromUser(ctx.String("editor"), "")
+	file, err := ioutil.TempFile("", "note")
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "create temporary file failed"), 1)
+	}
+	defer file.Close()
+
+	stopChan := make(chan struct{})
+	go func() {
+		err := dalpkg.WatchAndUpdate(dal, note, file.Name(), ctx.Duration("update-period"), stopChan)
+		if err != nil {
+			// FIXME: do something with this error
+		}
+	}()
+
+	body, err := notes.GetNoteBodyFromUser(file, ctx.String("editor"), "")
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get body from user failed"), 1)
 	}
+
 	note.Body = body
+	stopChan <- struct{}{}
 
 	// TODO: add option to not append edit to history
 	n, err := note.AppendEdit(time.Now())

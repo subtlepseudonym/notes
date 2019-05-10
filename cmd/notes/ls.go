@@ -59,7 +59,7 @@ var ls = cli.Command{
 }
 
 func lsAction(ctx *cli.Context) error {
-	dal, err := dal.NewDefaultDAL(Version) // FIXME: option to use different dal
+	dal, err := dalpkg.NewDefaultDAL(Version) // FIXME: option to use different dal
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "initialize dal failed").Error(), 1)
 	}
