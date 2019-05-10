@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/subtlepseudonym/notes"
+	"github.com/subtlepseudonym/notes/dal"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -42,7 +43,7 @@ var edit = cli.Command{
 }
 
 func editAction(ctx *cli.Context) error {
-	dal, err := notes.NewDefaultDAL(Version) // FIXME: add option for different dal
+	dal, err := dal.NewDefaultDAL(Version) // FIXME: add option for different dal
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
 	}

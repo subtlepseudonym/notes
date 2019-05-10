@@ -1,10 +1,12 @@
-package notes
+package dal
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
 	"path"
+
+	"github.com/subtlepseudonym/notes"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
@@ -19,11 +21,11 @@ const (
 // DAL interfaces the method by which we access the source of
 // Meta and Note objects
 type DAL interface {
-	GetMeta() (*Meta, error)
-	SaveMeta(*Meta) error
+	GetMeta() (*notes.Meta, error)
+	SaveMeta(*notes.Meta) error
 
-	GetNote(int) (*Note, error)
-	SaveNote(*Note) error
+	GetNote(int) (*notes.Note, error)
+	SaveNote(*notes.Note) error
 	RemoveNote(int) error
 }
 
@@ -49,7 +51,7 @@ func NewDefaultDAL(version string) (DAL, error) {
 	}, nil
 }
 
-func (d *defaultDAL) buildNewMeta() (*Meta, error) {
+func (d *defaultDAL) buildNewMeta() (*notes.Meta, error) {
 	if _, err := os.Stat(d.notesDirectoryPath); os.IsNotExist(err) {
 		err = os.Mkdir(d.notesDirectoryPath, os.ModeDir|os.FileMode(0700))
 		if err != nil {
@@ -64,9 +66,9 @@ func (d *defaultDAL) buildNewMeta() (*Meta, error) {
 	}
 	defer metaFile.Close()
 
-	m := &Meta{
+	m := &notes.Meta{
 		Version: d.version,
-		Notes:   make(map[int]NoteMeta),
+		Notes:   make(map[int]notes.NoteMeta),
 	}
 
 	err = json.NewEncoder(metaFile).Encode(m)
@@ -78,7 +80,7 @@ func (d *defaultDAL) buildNewMeta() (*Meta, error) {
 }
 
 // GetMeta retrieves and decodes a Meta from file
-func (d *defaultDAL) GetMeta() (*Meta, error) {
+func (d *defaultDAL) GetMeta() (*notes.Meta, error) {
 	metaPath := path.Join(d.notesDirectoryPath, d.metaFilename)
 	metaFile, err := os.Open(metaPath)
 	if err != nil {
@@ -86,7 +88,7 @@ func (d *defaultDAL) GetMeta() (*Meta, error) {
 	}
 	defer metaFile.Close()
 
-	var m Meta
+	var m notes.Meta
 	err = json.NewDecoder(metaFile).Decode(&m)
 	if err != nil {
 		return nil, errors.Wrap(err, "decode meta file failed")
@@ -96,7 +98,7 @@ func (d *defaultDAL) GetMeta() (*Meta, error) {
 }
 
 // SaveMeta encodes and saves the provided Meta to file
-func (d *defaultDAL) SaveMeta(meta *Meta) error {
+func (d *defaultDAL) SaveMeta(meta *notes.Meta) error {
 	metaPath := path.Join(d.notesDirectoryPath, d.metaFilename)
 	err := os.Rename(metaPath, metaPath+".bak")
 	if err != nil {
@@ -128,7 +130,7 @@ func (d *defaultDAL) getNotePath(id int) string {
 }
 
 // GetNote retrieves and decodes a Note from file
-func (d *defaultDAL) GetNote(id int) (*Note, error) {
+func (d *defaultDAL) GetNote(id int) (*notes.Note, error) {
 	notePath := d.getNotePath(id)
 	noteFile, err := os.Open(notePath)
 	if err != nil {
@@ -136,7 +138,7 @@ func (d *defaultDAL) GetNote(id int) (*Note, error) {
 	}
 	defer noteFile.Close()
 
-	var n Note
+	var n notes.Note
 	err = json.NewDecoder(noteFile).Decode(&n)
 	if err != nil {
 		return nil, errors.Wrap(err, "decode note file failed")
@@ -146,7 +148,7 @@ func (d *defaultDAL) GetNote(id int) (*Note, error) {
 }
 
 // SaveNote encodes and saves the provided Note to file
-func (d *defaultDAL) SaveNote(note *Note) error {
+func (d *defaultDAL) SaveNote(note *notes.Note) error {
 	notePath := d.getNotePath(note.Meta.ID)
 	noteFile, err := os.Create(notePath)
 	if err != nil {

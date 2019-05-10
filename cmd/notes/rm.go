@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/subtlepseudonym/notes"
+	"github.com/subtlepseudonym/notes/dal"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -33,7 +33,7 @@ func rmAction(ctx *cli.Context) error {
 	}
 	noteID := int(n)
 
-	dal, err := notes.NewDefaultDAL(Version) // FIXME: add option for different dal
+	dal, err := dal.NewDefaultDAL(Version) // FIXME: add option for different dal
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
 	}

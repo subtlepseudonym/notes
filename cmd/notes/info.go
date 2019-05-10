@@ -8,6 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/subtlepseudonym/notes"
+	"github.com/subtlepseudonym/notes/dal"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -28,7 +29,7 @@ func infoAction(ctx *cli.Context) error {
 		return printAppInfo(ctx)
 	}
 
-	dal, err := notes.NewDefaultDAL(Version) // FIXME: option to use different dal
+	dal, err := dal.NewDefaultDAL(Version) // FIXME: option to use different dal
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
 	}
