@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -10,12 +11,17 @@ import (
 	"github.com/urfave/cli"
 )
 
+const (
+	defaultLatestDepth = 5 // default number of IDs to search for latest note
+)
+
 var edit = cli.Command{
-	Name:      "edit",
-	ShortName: "e",
-	Usage:     "edit an existing note",
-	ArgsUsage: "noteID",
-	Action:    editAction,
+	Name:        "edit",
+	ShortName:   "e",
+	Usage:       "edit an existing note",
+	Description: "Open a note for editing, as specified by the <noteID> argument. If no argument is provided, notes will open the most recently created note for editing",
+	ArgsUsage:   "[<noteID>]",
+	Action:      editAction,
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  "title, t",
@@ -26,6 +32,11 @@ var edit = cli.Command{
 			Usage:  "text editor command",
 			Value:  defaultEditor,
 			EnvVar: "EDTIOR",
+		},
+		cli.IntFlag{
+			Name:  "latest-depth",
+			Usage: "number of IDs to search from latest ID to find latest note",
+			Value: defaultLatestDepth,
 		},
 	},
 }
@@ -41,17 +52,28 @@ func editAction(ctx *cli.Context) error {
 		return cli.NewExitError(errors.Wrap(err, "get meta failed"), 1)
 	}
 
-	var noteID int64
+	var noteID int
 	if ctx.Args().First() != "" {
-		noteID, err = strconv.ParseInt(ctx.Args().First(), 16, 64)
+		noteID64, err := strconv.ParseInt(ctx.Args().First(), 16, 64)
 		if err != nil {
 			return cli.NewExitError(errors.Wrap(err, "parse base 16 noteID argument failed"), 1)
 		}
+		noteID = int(noteID64)
 	} else {
-		noteID = int64(meta.LatestID)
+		for i := 0; i < ctx.Int("latest-depth"); i++ {
+			if _, exists := meta.Notes[meta.LatestID-i]; exists {
+				noteID = meta.LatestID - i
+				break
+			}
+		}
 	}
 
-	note, err := dal.GetNote(int(noteID))
+	if noteID == 0 {
+		// FIXME: may want to log a note that this is based upon content of the meta rather than a DAL existence check
+		return cli.NewExitError(errors.New(fmt.Sprintf("latest note ID ⊄ [%d,%d], try using noteID argument or --latest-depth", meta.LatestID-ctx.Int("latest-depth"), meta.LatestID)), 1)
+	}
+
+	note, err := dal.GetNote(noteID)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get note failed"), 1)
 	}

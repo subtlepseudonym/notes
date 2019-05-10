@@ -17,9 +17,9 @@ const infoDelimiter = "|"
 
 var info = cli.Command{
 	Name:        "info",
-	ArgsUsage:   `[meta] [note ID]`,
-	Usage:       "print app, meta, or note info",
-	Description: "Use this command to get information about the app itself, the meta file, or specific note files. Behavior is defined by the first provided argument. No argument prints app info, \"meta\" prints meta file info, and a valid note ID prints that note's info.",
+	Usage:       "print info",
+	Description: "This command gets information about the app binary, the meta file, or specific note files and prints it in a human-friendly format. These are specified by providing no arguments, the \"meta\" argument, or a noteID respectively",
+	ArgsUsage:   "[meta | <noteID>]",
 	Action:      infoAction,
 }
 

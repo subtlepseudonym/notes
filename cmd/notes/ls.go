@@ -117,7 +117,7 @@ func lsAction(ctx *cli.Context) error {
 		listed++
 	}
 
-	if ctx.Bool("reverse") {
+	if !ctx.Bool("reverse") {
 		for l, r := 0, len(noteList)-1; l < r; l, r = l+1, r-1 {
 			noteList[l], noteList[r] = noteList[r], noteList[l]
 		}

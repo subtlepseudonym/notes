@@ -25,7 +25,7 @@ func main() {
 	app := cli.NewApp()
 
 	app.Usage = "write and organize notes"
-	app.Description = "notes is intended to make it easy to jot down stream of consciousness notes while working in the command line and automatically back those notes up to a remote server"
+	app.Description = "notes is intended to make it easy to jot down stream of consciousness notes, maintain meta data on those notes, and to organize them for fast, easy retrieval at a later date"
 
 	app.Version = Version
 	app.Authors = []cli.Author{
