@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/chzyer/readline"
 	"github.com/kballard/go-shellquote"
@@ -116,7 +117,7 @@ func mainAction(ctx *cli.Context) error {
 			return cli.NewExitError(errors.Wrap(err, "read line failed"), 1)
 		}
 
-		if line == "exit" {
+		if strings.TrimSpace(line) == "exit" {
 			break
 		}
 
