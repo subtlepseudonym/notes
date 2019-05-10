@@ -111,7 +111,6 @@ func mainAction(ctx *cli.Context) error {
 				continue
 			}
 		} else if err == io.EOF {
-			fmt.Println("EOF")
 			break
 		} else if err != nil { // As of readline@2972be2 err will only ever be readline.ErrInterrupt, io.EOF, nil
 			return cli.NewExitError(errors.Wrap(err, "read line failed"), 1)
