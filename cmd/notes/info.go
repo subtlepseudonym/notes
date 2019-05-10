@@ -107,7 +107,10 @@ func printNoteInfo(ctx *cli.Context, meta *notes.Meta, note *notes.Note) error {
 		{"id", strconv.Itoa(note.Meta.ID)},
 		{"title", note.Meta.Title},
 		{"created", note.Meta.Created.Format(time.RFC3339)},
-		{"deleted", note.Meta.Deleted.Format(time.RFC3339)},
+	}
+
+	if !note.Meta.Deleted.Equal(time.Unix(0, 0)) {
+		rows = append(rows, []string{"deleted", note.Meta.Deleted.Format(time.RFC3339)})
 	}
 
 	if note.Meta.History != nil {
