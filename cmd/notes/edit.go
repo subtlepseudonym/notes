@@ -48,6 +48,31 @@ var edit = cli.Command{
 	},
 }
 
+func getNoteID(meta *notes.Meta, arg string, searchDepth int) (int, error) {
+	var noteID int
+	if arg != "" {
+		noteID64, err := strconv.ParseInt(arg, 16, 64)
+		if err != nil {
+			return 0, errors.Wrap(err, "parse base 16 noteID argument failed")
+		}
+		noteID = int(noteID64)
+	} else {
+		for i := 0; i < searchDepth; i++ {
+			if _, exists := meta.Notes[meta.LatestID-i]; exists {
+				noteID = meta.LatestID - i
+				break
+			}
+		}
+	}
+
+	if noteID == 0 {
+		// FIXME: may want to log a note that this is based upon content of the meta rather than a DAL existence check
+		return 0, fmt.Errorf("latest note ID ⊄ [%x,%x], try using noteID argument or --latest-depth", meta.LatestID-searchDepth, meta.LatestID)
+	}
+
+	return noteID, nil
+}
+
 func editAction(ctx *cli.Context) error {
 	dal, err := dalpkg.NewDefaultDAL(Version) // FIXME: add option for different dal
 	if err != nil {
@@ -59,25 +84,9 @@ func editAction(ctx *cli.Context) error {
 		return cli.NewExitError(errors.Wrap(err, "get meta failed"), 1)
 	}
 
-	var noteID int
-	if ctx.Args().First() != "" {
-		noteID64, err := strconv.ParseInt(ctx.Args().First(), 16, 64)
-		if err != nil {
-			return cli.NewExitError(errors.Wrap(err, "parse base 16 noteID argument failed"), 1)
-		}
-		noteID = int(noteID64)
-	} else {
-		for i := 0; i < ctx.Int("latest-depth"); i++ {
-			if _, exists := meta.Notes[meta.LatestID-i]; exists {
-				noteID = meta.LatestID - i
-				break
-			}
-		}
-	}
-
-	if noteID == 0 {
-		// FIXME: may want to log a note that this is based upon content of the meta rather than a DAL existence check
-		return cli.NewExitError(errors.New(fmt.Sprintf("latest note ID ⊄ [%d,%d], try using noteID argument or --latest-depth", meta.LatestID-ctx.Int("latest-depth"), meta.LatestID)), 1)
+	noteID, err := getNoteID(meta, ctx.Args().First(), ctx.Int("latest-depth"))
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "get note ID failed"), 1)
 	}
 
 	note, err := dal.GetNote(noteID)
@@ -86,7 +95,7 @@ func editAction(ctx *cli.Context) error {
 	}
 
 	var changed bool
-	if !time.Unix(0, 0).Equal(note.Meta.Deleted.Time) {
+	if !note.Meta.Deleted.Time.Equal(time.Unix(0, 0)) {
 		note.Meta.Deleted.Time = time.Unix(0, 0) // restore soft deleted notes
 		changed = true
 	}
@@ -126,11 +135,10 @@ func editAction(ctx *cli.Context) error {
 	}
 
 	// TODO: add option to not append edit to history
-	n, err := note.AppendEdit(time.Now())
+	note, err = note.AppendEdit(time.Now())
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "append edit to note history failed"), 1)
 	}
-	note = n
 
 	err = dal.SaveNote(note)
 	if err != nil {

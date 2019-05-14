@@ -62,6 +62,11 @@ func newAction(ctx *cli.Context) error {
 	}
 	newNoteID := meta.LatestID + 1
 
+	_, exists := meta.Notes[newNoteID]
+	if exists {
+		return cli.NewExitError(errors.New("note ID is not unique"), 1)
+	}
+
 	var title string
 	if ctx.String("title") != "" {
 		title = ctx.String("title")
@@ -96,16 +101,14 @@ func newAction(ctx *cli.Context) error {
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get body from user failed"), 1)
 	}
-
 	note.Body = body
 	stopChan <- struct{}{}
 
 	// TODO: add option to not append edit to history
-	n, err := note.AppendEdit(time.Now())
+	note, err = note.AppendEdit(time.Now())
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "append edit to note history failed"), 1)
 	}
-	note = n
 
 	err = dal.SaveNote(note)
 	if err != nil {
@@ -113,11 +116,12 @@ func newAction(ctx *cli.Context) error {
 		return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
 	}
 
-	_, exists := meta.Notes[note.Meta.ID]
-	if exists {
-		return cli.NewExitError(errors.New("note ID is not unique"), 1)
+	metaSize, err := meta.ApproxSize()
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "get meta size failed"), 1)
 	}
 
+	meta.Size = metaSize
 	meta.Notes[note.Meta.ID] = note.Meta
 	meta.LatestID = note.Meta.ID
 	err = dal.SaveMeta(meta)
