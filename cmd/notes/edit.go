@@ -25,6 +25,10 @@ var edit = cli.Command{
 	ArgsUsage:   "[<noteID>]",
 	Action:      editAction,
 	Flags: []cli.Flag{
+		cli.BoolFlag{
+			Name: "no-watch",
+			Usage: "don't save note in background",
+		},
 		cli.StringFlag{
 			Name:  "title, t",
 			Usage: "note title",
@@ -111,20 +115,22 @@ func editAction(ctx *cli.Context) error {
 	}
 	defer file.Close()
 
-	stopChan := make(chan struct{})
-	go func() {
-		err := dalpkg.WatchAndUpdate(dal, note, file.Name(), ctx.Duration("update-period"), stopChan)
-		if err != nil {
-			// FIXME: do something with this error
-		}
-	}()
+	stop := make(chan struct{})
+	if !ctx.Bool("no-watch") {
+		go func() {
+			err := dalpkg.WatchAndUpdate(dal, note, file.Name(), ctx.Duration("update-period"), stop)
+			if err != nil {
+				// FIXME: do something with this error
+			}
+		}()
+	}
 
 	body, err := notes.GetNoteBodyFromUser(file, ctx.String("editor"), note.Body)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get note body from user failed"), 1)
 	}
 
-	stopChan <- struct{}{}
+	close(stop)
 	if note.Body != body {
 		note.Body = body
 		changed = true

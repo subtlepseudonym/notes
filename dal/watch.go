@@ -18,7 +18,7 @@ func WatchAndUpdate(dal DAL, note *notes.Note, filename string, period time.Dura
 	for {
 		select {
 		case <-stop:
-			break
+			return nil
 		case timestamp := <-ticker.C:
 			b, err := ioutil.ReadFile(filename)
 			if err != nil {
