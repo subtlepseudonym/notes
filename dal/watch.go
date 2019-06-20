@@ -12,7 +12,7 @@ import (
 // WatchAndUpdate periodically reads the contents of the provided file and compares
 // it to the body of the provided note. If they aren't equal, it saves the changes
 // to the DAL
-func WatchAndUpdate(dal DAL, note *notes.Note, filename string, period time.Duration, stop chan struct{}, log *zap.Logger) error {
+func WatchAndUpdate(dal DAL, meta *notes.Meta, note *notes.Note, filename string, period time.Duration, stop chan struct{}, log *zap.Logger) error {
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
 
@@ -41,8 +41,20 @@ func WatchAndUpdate(dal DAL, note *notes.Note, filename string, period time.Dura
 			if err != nil {
 				return errors.Wrap(err, "save note failed")
 			}
-
 			log.Info("note updated", zap.Int("noteID", note.Meta.ID))
+
+			metaSize, err := meta.ApproxSize()
+			if err != nil {
+				return errors.Wrap(err, "get meta size failed")
+			}
+
+			meta.Size = metaSize
+			meta.Notes[note.Meta.ID] = note.Meta
+			err = dal.SaveMeta(meta)
+			if err != nil {
+				return errors.Wrap(err, "save meta failed")
+			}
+			log.Info("meta updated")
 		}
 	}
 

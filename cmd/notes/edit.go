@@ -119,7 +119,7 @@ func editAction(ctx *cli.Context) error {
 	stop := make(chan struct{})
 	if !ctx.Bool("no-watch") {
 		go func() {
-			err := dalpkg.WatchAndUpdate(dal, note, file.Name(), ctx.Duration("update-period"), stop, Logger)
+			err := dalpkg.WatchAndUpdate(dal, meta, note, file.Name(), ctx.Duration("update-period"), stop, Logger)
 			if err != nil {
 				Logger.Error("watch and updated failed", zap.Error(err), zap.Int("noteID", note.Meta.ID), zap.String("filename", file.Name()))
 			}
