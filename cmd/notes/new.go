@@ -22,6 +22,10 @@ var newNote = cli.Command{
 	Usage:     "create a new note",
 	Action:    newAction,
 	Flags: []cli.Flag{
+		cli.BoolFlag{
+			Name: "no-watch",
+			Usage: "don't save note in background",
+		},
 		cli.StringFlag{
 			Name:  "title, t",
 			Usage: "note title",
@@ -62,6 +66,11 @@ func newAction(ctx *cli.Context) error {
 	}
 	newNoteID := meta.LatestID + 1
 
+	_, exists := meta.Notes[newNoteID]
+	if exists {
+		return cli.NewExitError(errors.New("note ID is not unique"), 1)
+	}
+
 	var title string
 	if ctx.String("title") != "" {
 		title = ctx.String("title")
@@ -84,28 +93,28 @@ func newAction(ctx *cli.Context) error {
 	}
 	defer file.Close()
 
-	stopChan := make(chan struct{})
-	go func() {
-		err := dalpkg.WatchAndUpdate(dal, note, file.Name(), ctx.Duration("update-period"), stopChan, Logger)
-		if err != nil {
-			// FIXME: do something with this error
-		}
-	}()
+	stop := make(chan struct{})
+	if !ctx.Bool("no-watch") {
+		go func() {
+			err := dalpkg.WatchAndUpdate(dal, note, file.Name(), ctx.Duration("update-period"), stop, Logger)
+			if err != nil {
+				// FIXME: do something with this error
+			}
+		}()
+	}
 
 	body, err := notes.GetNoteBodyFromUser(file, ctx.String("editor"), "")
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get body from user failed"), 1)
 	}
-
 	note.Body = body
-	stopChan <- struct{}{}
+	close(stop)
 
 	// TODO: add option to not append edit to history
-	n, err := note.AppendEdit(time.Now())
+	note, err = note.AppendEdit(time.Now())
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "append edit to note history failed"), 1)
 	}
-	note = n
 
 	err = dal.SaveNote(note)
 	if err != nil {
@@ -113,11 +122,12 @@ func newAction(ctx *cli.Context) error {
 		return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
 	}
 
-	_, exists := meta.Notes[note.Meta.ID]
-	if exists {
-		return cli.NewExitError(errors.New("note ID is not unique"), 1)
+	metaSize, err := meta.ApproxSize()
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "get meta size failed"), 1)
 	}
 
+	meta.Size = metaSize
 	meta.Notes[note.Meta.ID] = note.Meta
 	meta.LatestID = note.Meta.ID
 	err = dal.SaveMeta(meta)

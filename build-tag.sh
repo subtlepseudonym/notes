@@ -10,7 +10,7 @@ done
 
 untracked=0
 for line in $(git ls-files --others --exclude-standard); do
-	untracked=$((untracked + $(wc -l $line | cut -f1 -d" ")))
+	untracked=$((untracked + $(wc -l $line | awk '{print $1}')))
 done
 
 version=$(git describe --abbrev=0)
