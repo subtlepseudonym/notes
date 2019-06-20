@@ -104,7 +104,7 @@ func editAction(ctx *cli.Context) error {
 
 	stopChan := make(chan struct{})
 	go func() {
-		err := dalpkg.WatchAndUpdate(dal, note, file.Name(), ctx.Duration("update-period"), stopChan)
+		err := dalpkg.WatchAndUpdate(dal, note, file.Name(), ctx.Duration("update-period"), stopChan, Logger)
 		if err != nil {
 			// FIXME: do something with this error
 		}

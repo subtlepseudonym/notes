@@ -10,11 +10,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/subtlepseudonym/notes/log"
+
 	"github.com/chzyer/readline"
 	"github.com/kballard/go-shellquote"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 // Set at compile time
@@ -22,6 +26,7 @@ var (
 	Version       = "v0.0.0"
 	Revision      = "git_revision"
 	inInteractive = false
+	Logger        = zap.NewNop() // no-op logger in case we don't set one later
 )
 
 const (
@@ -29,6 +34,7 @@ const (
 	defaultUpdatePeriod    = 5 * time.Minute
 	defaultNotesDirectory  = ".notes"
 	defaultHistoryFilePath = ".nts_history"
+	defaultLogFilePath     = ".nts_log"
 )
 
 func main() {
@@ -50,7 +56,21 @@ func main() {
 	app.EnableBashCompletion = true
 	app.ErrWriter = os.Stderr
 
+	app.Before = mainBefore
 	app.Action = mainAction
+
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:  "silent",
+			Usage: "Prevent all logging",
+		},
+		cli.IntFlag{
+			Name:  "verbosity",
+			Usage: "Set the logging level",
+			Value: int(zapcore.InfoLevel),
+		},
+	}
+
 	app.Commands = []cli.Command{
 		ls,
 		newNote,
@@ -75,6 +95,28 @@ func main() {
 		fmt.Fprintf(os.Stderr, "runtime error: %s", err)
 		os.Exit(1)
 	}
+}
+
+func mainBefore(ctx *cli.Context) error {
+	if ctx.GlobalBool("silent") {
+		return nil
+	}
+
+	home, err := homedir.Dir()
+	if err != nil {
+		return errors.Wrap(err, "get home directory failed")
+	}
+
+	logFile, err := os.OpenFile(path.Join(home, defaultNotesDirectory, defaultLogFilePath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return errors.Wrap(err, "open log file failed")
+	}
+
+	logLevel := ctx.GlobalInt("verbosity")
+
+	Logger = log.NewLogger(logFile, logLevel)
+
+	return nil
 }
 
 func mainAction(ctx *cli.Context) error {
