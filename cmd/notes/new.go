@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 )
 
 const (
@@ -23,7 +24,7 @@ var newNote = cli.Command{
 	Action:    newAction,
 	Flags: []cli.Flag{
 		cli.BoolFlag{
-			Name: "no-watch",
+			Name:  "no-watch",
 			Usage: "don't save note in background",
 		},
 		cli.StringFlag{
@@ -98,7 +99,7 @@ func newAction(ctx *cli.Context) error {
 		go func() {
 			err := dalpkg.WatchAndUpdate(dal, note, file.Name(), ctx.Duration("update-period"), stop, Logger)
 			if err != nil {
-				// FIXME: do something with this error
+				Logger.Error("watch and updated failed", zap.Error(err), zap.Int("noteID", note.Meta.ID), zap.String("filename", file.Name()))
 			}
 		}()
 	}
@@ -142,7 +143,7 @@ func generateDateTitle(format, location string) string {
 	var loc *time.Location
 	l, err := time.LoadLocation(location)
 	if err != nil {
-		// TODO: log error
+		Logger.Warn("load location failed, defaulting to UTC", zap.String("location", location), zap.String("format", format), zap.Error(err))
 		loc = time.UTC
 	} else {
 		loc = l

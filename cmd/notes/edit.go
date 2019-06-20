@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 )
 
 const (
@@ -26,7 +27,7 @@ var edit = cli.Command{
 	Action:      editAction,
 	Flags: []cli.Flag{
 		cli.BoolFlag{
-			Name: "no-watch",
+			Name:  "no-watch",
 			Usage: "don't save note in background",
 		},
 		cli.StringFlag{
@@ -120,7 +121,7 @@ func editAction(ctx *cli.Context) error {
 		go func() {
 			err := dalpkg.WatchAndUpdate(dal, note, file.Name(), ctx.Duration("update-period"), stop, Logger)
 			if err != nil {
-				// FIXME: do something with this error
+				Logger.Error("watch and updated failed", zap.Error(err), zap.Int("noteID", note.Meta.ID), zap.String("filename", file.Name()))
 			}
 		}()
 	}
