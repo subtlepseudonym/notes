@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/subtlepseudonym/notes/dal"
 	"github.com/subtlepseudonym/notes/log"
 
 	"github.com/chzyer/readline"
@@ -71,12 +72,24 @@ func main() {
 		},
 	}
 
+	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: option to use different dal
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "runtime error: %s", errors.Wrap(err, "initialize dal failed"))
+		os.Exit(1)
+	}
+
+	meta, err := dal.GetMeta()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "runtime error: %s", errors.Wrap(err, "get meta failed"))
+		os.Exit(1)
+	}
+
 	app.Commands = []cli.Command{
-		ls,
-		newNote,
-		rm,
-		edit,
-		info,
+		buildListCommand(dal, meta),
+		buildNewCommand(dal, meta),
+		buildRemoveCommand(dal, meta),
+		buildEditCommand(dal, meta),
+		buildInfoCommand(dal, meta),
 	}
 
 	app.CommandNotFound = func(ctx *cli.Context, cmd string) {
@@ -90,7 +103,7 @@ func main() {
 		}
 	}
 
-	err := app.Run(os.Args)
+	err = app.Run(os.Args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "runtime error: %s", err)
 		os.Exit(1)

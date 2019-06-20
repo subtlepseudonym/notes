@@ -4,26 +4,31 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/subtlepseudonym/notes/dal"
+	"github.com/subtlepseudonym/notes"
+	dalpkg "github.com/subtlepseudonym/notes/dal"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
-var rm = cli.Command{
-	Name:      "rm",
-	Usage:     "remove an existing note",
-	ArgsUsage: "<noteID>",
-	Action:    rmAction,
-	Flags: []cli.Flag{
-		cli.BoolFlag{
-			Name:  "hard",
-			Usage: "hard delete",
+func buildRemoveCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+	return cli.Command{
+		Name:      "rm",
+		Usage:     "remove an existing note",
+		ArgsUsage: "<noteID>",
+		Action: func(ctx *cli.Context) error {
+			return rmAction(ctx, dal, meta)
 		},
-	},
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "hard",
+				Usage: "hard delete",
+			},
+		},
+	}
 }
 
-func rmAction(ctx *cli.Context) error {
+func rmAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	if !ctx.Args().Present() {
 		return cli.NewExitError(errors.New("note ID argument is required"), 1)
 	}
@@ -33,19 +38,9 @@ func rmAction(ctx *cli.Context) error {
 	}
 	noteID := int(n)
 
-	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: add option for different dal
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
-	}
-
 	note, err := dal.GetNote(noteID)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get note failed"), 1)
-	}
-
-	meta, err := dal.GetMeta()
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get meta failed"), 1)
 	}
 
 	if ctx.Bool("hard") {

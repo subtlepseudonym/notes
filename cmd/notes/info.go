@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/subtlepseudonym/notes"
-	"github.com/subtlepseudonym/notes/dal"
+	dalpkg "github.com/subtlepseudonym/notes/dal"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -16,27 +16,21 @@ import (
 
 const infoDelimiter = "|"
 
-var info = cli.Command{
-	Name:        "info",
-	Usage:       "print info",
-	Description: "This command gets information about the app binary, the meta file, or specific note files and prints it in a human-friendly format. These are specified by providing no arguments, the \"meta\" argument, or a noteID respectively",
-	ArgsUsage:   "[meta | <noteID>]",
-	Action:      infoAction,
+func buildInfoCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+	return cli.Command{
+		Name:        "info",
+		Usage:       "print info",
+		Description: "This command gets information about the app binary, the meta file, or specific note files and prints it in a human-friendly format. These are specified by providing no arguments, the \"meta\" argument, or a noteID respectively",
+		ArgsUsage:   "[meta | <noteID>]",
+		Action: func(ctx *cli.Context) error {
+			return infoAction(ctx, dal, meta)
+		},
+	}
 }
 
-func infoAction(ctx *cli.Context) error {
+func infoAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	if !ctx.Args().Present() {
 		return printAppInfo(ctx)
-	}
-
-	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: option to use different dal
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
-	}
-
-	meta, err := dal.GetMeta()
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get meta failed"), 1)
 	}
 
 	if ctx.Args().First() == "meta" {

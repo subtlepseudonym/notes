@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/subtlepseudonym/notes/dal"
+	"github.com/subtlepseudonym/notes"
+	dalpkg "github.com/subtlepseudonym/notes/dal"
 
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
@@ -18,57 +18,51 @@ const (
 	defaultListColumnDelimiter = " | "
 )
 
-var ls = cli.Command{
-	Name:   "ls",
-	Usage:  "list note info",
-	Action: lsAction,
-	Flags: []cli.Flag{
-		cli.BoolFlag{
-			Name:  "all, a",
-			Usage: "show all notes",
+func buildListCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+	return cli.Command{
+		Name:  "ls",
+		Usage: "list note info",
+		Action: func(ctx *cli.Context) error {
+			return lsAction(ctx, dal, meta)
 		},
-		cli.BoolFlag{
-			Name:  "long, l",
-			Usage: "long format",
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "all, a",
+				Usage: "show all notes",
+			},
+			cli.BoolFlag{
+				Name:  "long, l",
+				Usage: "long format",
+			},
+			cli.BoolFlag{
+				Name:  "deleted, d",
+				Usage: "show soft deleted notes",
+			},
+			cli.BoolFlag{
+				Name:  "reverse, r",
+				Usage: "list notes in reverse order",
+			},
+			cli.IntFlag{
+				Name:  "num, n",
+				Usage: "number of notes to display",
+				Value: defaultListSize,
+			},
+			cli.StringFlag{
+				Name:  "time-format",
+				Usage: "format to display timestamps in",
+				Value: defaultListTimeFormat,
+			},
+			cli.StringFlag{
+				Name:  "delimiter",
+				Usage: "list column delimiter",
+				Value: defaultListColumnDelimiter,
+			},
 		},
-		cli.BoolFlag{
-			Name:  "deleted, d",
-			Usage: "show soft deleted notes",
-		},
-		cli.BoolFlag{
-			Name:  "reverse, r",
-			Usage: "list notes in reverse order",
-		},
-		cli.IntFlag{
-			Name:  "num, n",
-			Usage: "number of notes to display",
-			Value: defaultListSize,
-		},
-		cli.StringFlag{
-			Name:  "time-format",
-			Usage: "format to display timestamps in",
-			Value: defaultListTimeFormat,
-		},
-		cli.StringFlag{
-			Name:  "delimiter",
-			Usage: "list column delimiter",
-			Value: defaultListColumnDelimiter,
-		},
-	},
-	UseShortOptionHandling: true,
+		UseShortOptionHandling: true,
+	}
 }
 
-func lsAction(ctx *cli.Context) error {
-	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: option to use different dal
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "initialize dal failed").Error(), 1)
-	}
-
-	meta, err := dal.GetMeta()
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get meta failed"), 1)
-	}
-
+func lsAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	limit := defaultListSize
 	if ctx.Bool("all") {
 		limit = len(meta.Notes)

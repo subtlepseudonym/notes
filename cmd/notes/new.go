@@ -1,11 +1,10 @@
 package main
 
 import (
-	"io/ioutil"
 	"time"
 
 	"github.com/subtlepseudonym/notes"
-	"github.com/subtlepseudonym/notes/dal"
+	dalpkg "github.com/subtlepseudonym/notes/dal"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -17,56 +16,50 @@ const (
 	defaultDateTitleLocation = "Local"
 )
 
-var newNote = cli.Command{
-	Name:      "new",
-	ShortName: "n",
-	Usage:     "create a new note",
-	Action:    newAction,
-	Flags: []cli.Flag{
-		cli.BoolFlag{
-			Name:  "no-watch",
-			Usage: "don't save note in background",
+func buildNewCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+	return cli.Command{
+		Name:      "new",
+		ShortName: "n",
+		Usage:     "create a new note",
+		Action: func(ctx *cli.Context) error {
+			return newAction(ctx, dal, meta)
 		},
-		cli.StringFlag{
-			Name:  "title, t",
-			Usage: "note title",
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "no-watch",
+				Usage: "don't save note in background",
+			},
+			cli.StringFlag{
+				Name:  "title, t",
+				Usage: "note title",
+			},
+			cli.StringFlag{
+				Name:   "editor",
+				Usage:  "text editor command",
+				Value:  defaultEditor,
+				EnvVar: "EDITOR",
+			},
+			cli.StringFlag{
+				Name:  "title-format",
+				Usage: "default title time format",
+				Value: defaultDateTitleFormat,
+			},
+			cli.StringFlag{
+				Name:  "title-location",
+				Usage: "default title time location",
+				Value: defaultDateTitleLocation,
+			},
+			cli.DurationFlag{
+				Name:  "update-period",
+				Usage: "automatic note update period",
+				Value: defaultUpdatePeriod,
+			},
 		},
-		cli.StringFlag{
-			Name:   "editor",
-			Usage:  "text editor command",
-			Value:  defaultEditor,
-			EnvVar: "EDITOR",
-		},
-		cli.StringFlag{
-			Name:  "title-format",
-			Usage: "default title time format",
-			Value: defaultDateTitleFormat,
-		},
-		cli.StringFlag{
-			Name:  "title-location",
-			Usage: "default title time location",
-			Value: defaultDateTitleLocation,
-		},
-		cli.DurationFlag{
-			Name:  "update-period",
-			Usage: "automatic note update period",
-			Value: defaultUpdatePeriod,
-		},
-	},
+	}
 }
 
-func newAction(ctx *cli.Context) error {
-	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: option to use different dal
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
-	}
-
-	meta, err := dal.GetMeta()
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get meta failed"), 1)
-	}
+func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	newNoteID := meta.LatestID + 1
-
 	_, exists := meta.Notes[newNoteID]
 	if exists {
 		return cli.NewExitError(errors.New("note ID is not unique"), 1)
@@ -88,28 +81,11 @@ func newAction(ctx *cli.Context) error {
 		},
 	}
 
-	file, err := ioutil.TempFile("", "note")
+	body, err := editNote(ctx, dal, meta, note)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "create temporary file failed"), 1)
-	}
-	defer file.Close()
-
-	stop := make(chan struct{})
-	if !ctx.Bool("no-watch") {
-		go func() {
-			err := dalpkg.WatchAndUpdate(dal, meta, note, file.Name(), ctx.Duration("update-period"), stop, Logger)
-			if err != nil {
-				Logger.Error("watch and updated failed", zap.Error(err), zap.Int("noteID", note.Meta.ID), zap.String("filename", file.Name()))
-			}
-		}()
-	}
-
-	body, err := notes.GetNoteBodyFromUser(file, ctx.String("editor"), "")
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get body from user failed"), 1)
+		return cli.NewExitError(errors.Wrap(err, "user handoff failed"), 1)
 	}
 	note.Body = body
-	close(stop)
 
 	// TODO: add option to not append edit to history
 	note, err = note.AppendEdit(time.Now())

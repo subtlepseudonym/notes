@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/subtlepseudonym/notes"
-	"github.com/subtlepseudonym/notes/dal"
+	dalpkg "github.com/subtlepseudonym/notes/dal"
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
@@ -18,39 +18,43 @@ const (
 	defaultLatestDepth = 5 // default number of IDs to search for latest note
 )
 
-var edit = cli.Command{
-	Name:        "edit",
-	ShortName:   "e",
-	Usage:       "edit an existing note",
-	Description: "Open a note for editing, as specified by the <noteID> argument. If no argument is provided, notes will open the most recently created note for editing",
-	ArgsUsage:   "[<noteID>]",
-	Action:      editAction,
-	Flags: []cli.Flag{
-		cli.BoolFlag{
-			Name:  "no-watch",
-			Usage: "don't save note in background",
+func buildEditCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+	return cli.Command{
+		Name:        "edit",
+		ShortName:   "e",
+		Usage:       "edit an existing note",
+		Description: "Open a note for editing, as specified by the <noteID> argument. If no argument is provided, notes will open the most recently created note for editing",
+		ArgsUsage:   "[<noteID>]",
+		Action: func(ctx *cli.Context) error {
+			return editAction(ctx, dal, meta)
 		},
-		cli.StringFlag{
-			Name:  "title, t",
-			Usage: "note title",
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "no-watch",
+				Usage: "don't save note in background",
+			},
+			cli.StringFlag{
+				Name:  "title, t",
+				Usage: "note title",
+			},
+			cli.StringFlag{
+				Name:   "editor",
+				Usage:  "text editor command",
+				Value:  defaultEditor,
+				EnvVar: "EDTIOR",
+			},
+			cli.IntFlag{
+				Name:  "latest-depth",
+				Usage: "number of IDs to search from latest ID to find latest note",
+				Value: defaultLatestDepth,
+			},
+			cli.DurationFlag{
+				Name:  "update-period",
+				Usage: "automatic note update period",
+				Value: defaultUpdatePeriod,
+			},
 		},
-		cli.StringFlag{
-			Name:   "editor",
-			Usage:  "text editor command",
-			Value:  defaultEditor,
-			EnvVar: "EDTIOR",
-		},
-		cli.IntFlag{
-			Name:  "latest-depth",
-			Usage: "number of IDs to search from latest ID to find latest note",
-			Value: defaultLatestDepth,
-		},
-		cli.DurationFlag{
-			Name:  "update-period",
-			Usage: "automatic note update period",
-			Value: defaultUpdatePeriod,
-		},
-	},
+	}
 }
 
 func getNoteID(meta *notes.Meta, arg string, searchDepth int) (int, error) {
@@ -78,17 +82,33 @@ func getNoteID(meta *notes.Meta, arg string, searchDepth int) (int, error) {
 	return noteID, nil
 }
 
-func editAction(ctx *cli.Context) error {
-	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: add option for different dal
+func editNote(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta, note *notes.Note) (string, error) {
+	file, err := ioutil.TempFile("", "note")
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
+		return "", errors.Wrap(err, "create temp file failed")
+	}
+	defer file.Close()
+
+	stop := make(chan struct{})
+	if !ctx.Bool("no-watch") {
+		go func() {
+			err := dalpkg.WatchAndUpdate(dal, meta, note, file.Name(), ctx.Duration("update-period"), stop, Logger)
+			if err != nil {
+				Logger.Error("watch and updated failed", zap.Error(err), zap.Int("noteID", note.Meta.ID), zap.String("filename", file.Name()))
+			}
+		}()
 	}
 
-	meta, err := dal.GetMeta()
+	body, err := notes.GetNoteBodyFromUser(file, ctx.String("editor"), note.Body)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get meta failed"), 1)
+		return "", errors.Wrap(err, "get note body from user failed")
 	}
+	close(stop)
 
+	return body, nil
+}
+
+func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	noteID, err := getNoteID(meta, ctx.Args().First(), ctx.Int("latest-depth"))
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get note ID failed"), 1)
@@ -110,28 +130,11 @@ func editAction(ctx *cli.Context) error {
 		changed = true
 	}
 
-	file, err := ioutil.TempFile("", "note")
+	body, err := editNote(ctx, dal, meta, note)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "create temp file failed"), 1)
-	}
-	defer file.Close()
-
-	stop := make(chan struct{})
-	if !ctx.Bool("no-watch") {
-		go func() {
-			err := dalpkg.WatchAndUpdate(dal, meta, note, file.Name(), ctx.Duration("update-period"), stop, Logger)
-			if err != nil {
-				Logger.Error("watch and updated failed", zap.Error(err), zap.Int("noteID", note.Meta.ID), zap.String("filename", file.Name()))
-			}
-		}()
+		return cli.NewExitError(errors.Wrap(err, "user handoff failed"), 1)
 	}
 
-	body, err := notes.GetNoteBodyFromUser(file, ctx.String("editor"), note.Body)
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get note body from user failed"), 1)
-	}
-
-	close(stop)
 	if note.Body != body {
 		note.Body = body
 		changed = true
