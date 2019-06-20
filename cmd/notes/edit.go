@@ -40,6 +40,11 @@ var edit = cli.Command{
 			Usage: "number of IDs to search from latest ID to find latest note",
 			Value: defaultLatestDepth,
 		},
+		cli.DurationFlag{
+			Name:  "update-period",
+			Usage: "automatic note update period",
+			Value: defaultUpdatePeriod,
+		},
 	},
 }
 
