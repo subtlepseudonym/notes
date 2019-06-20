@@ -5,12 +5,14 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/chzyer/readline"
 	"github.com/kballard/go-shellquote"
+	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
@@ -23,9 +25,10 @@ var (
 )
 
 const (
-	defaultEditor       = "vim"
-	defaultUpdatePeriod = 5 * time.Minute
-	historyFilePath     = ".nts_history"
+	defaultEditor          = "vim"
+	defaultUpdatePeriod    = 5 * time.Minute
+	defaultNotesDirectory  = ".notes"
+	defaultHistoryFilePath = ".nts_history"
 )
 
 func main() {

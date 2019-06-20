@@ -49,7 +49,7 @@ var edit = cli.Command{
 }
 
 func editAction(ctx *cli.Context) error {
-	dal, err := dalpkg.NewDefaultDAL(Version) // FIXME: add option for different dal
+	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: add option for different dal
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "initialize dal failed"), 1)
 	}

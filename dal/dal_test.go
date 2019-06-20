@@ -8,9 +8,10 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-func TestNewDefaultDAL(t *testing.T) {
+func TestNewLocalDAL(t *testing.T) {
 	version := "totally not a semantic version"
-	dal, err := NewDefaultDAL(version)
+	dir := "notes_test_dir"
+	dal, err := NewLocalDAL(dir, version)
 	if err != nil {
 		t.Error(err)
 	}
@@ -21,10 +22,10 @@ func TestNewDefaultDAL(t *testing.T) {
 		t.FailNow()
 	}
 
-	expected := &defaultDAL{
+	expected := &localDAL{
 		version:            version,
 		metaFilename:       defaultMetaFilename,
-		notesDirectoryPath: path.Join(home, defaultNotesDirectory),
+		notesDirectoryPath: path.Join(home, dir),
 		noteFilenameFormat: defaultNoteFilenameFormat,
 	}
 
@@ -33,17 +34,17 @@ func TestNewDefaultDAL(t *testing.T) {
 	}
 }
 
-func TestDefaultDALGetMeta(t *testing.T) {
+func TestLocalDALGetMeta(t *testing.T) {
 }
 
-func TestDefaultDALSaveMeta(t *testing.T) {
+func TestLocalDALSaveMeta(t *testing.T) {
 }
 
-func TestDefaultDALGetNote(t *testing.T) {
+func TestLocalDALGetNote(t *testing.T) {
 }
 
-func TestDefaultDALSaveNote(t *testing.T) {
+func TestLocalDALSaveNote(t *testing.T) {
 }
 
-func TestDefaultDALRemoveNote(t *testing.T) {
+func TestLocalDALRemoveNote(t *testing.T) {
 }

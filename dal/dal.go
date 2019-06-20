@@ -14,7 +14,6 @@ import (
 
 const (
 	defaultMetaFilename       = "meta"
-	defaultNotesDirectory     = ".notes"
 	defaultNoteFilenameFormat = "%06d"
 )
 
@@ -29,29 +28,29 @@ type DAL interface {
 	RemoveNote(int) error
 }
 
-type defaultDAL struct {
+type localDAL struct {
 	version            string
 	metaFilename       string
 	notesDirectoryPath string
 	noteFilenameFormat string
 }
 
-// NewDefaultDAL initializes a DAL with the default options
-func NewDefaultDAL(version string) (DAL, error) {
+// NewLocalDAL initializes a DAL with the default options
+func NewLocalDAL(dirName, version string) (DAL, error) {
 	home, err := homedir.Dir()
 	if err != nil {
 		return nil, errors.Wrap(err, "get home directory failed")
 	}
 
-	return &defaultDAL{
+	return &localDAL{
 		version:            version,
 		metaFilename:       defaultMetaFilename,
-		notesDirectoryPath: path.Join(home, defaultNotesDirectory),
+		notesDirectoryPath: path.Join(home, dirName),
 		noteFilenameFormat: defaultNoteFilenameFormat,
 	}, nil
 }
 
-func (d *defaultDAL) buildNewMeta() (*notes.Meta, error) {
+func (d *localDAL) buildNewMeta() (*notes.Meta, error) {
 	if _, err := os.Stat(d.notesDirectoryPath); os.IsNotExist(err) {
 		err = os.Mkdir(d.notesDirectoryPath, os.ModeDir|os.FileMode(0700))
 		if err != nil {
@@ -80,7 +79,7 @@ func (d *defaultDAL) buildNewMeta() (*notes.Meta, error) {
 }
 
 // GetMeta retrieves and decodes a Meta from file
-func (d *defaultDAL) GetMeta() (*notes.Meta, error) {
+func (d *localDAL) GetMeta() (*notes.Meta, error) {
 	metaPath := path.Join(d.notesDirectoryPath, d.metaFilename)
 	metaFile, err := os.Open(metaPath)
 	if err != nil {
@@ -98,7 +97,7 @@ func (d *defaultDAL) GetMeta() (*notes.Meta, error) {
 }
 
 // SaveMeta encodes and saves the provided Meta to file
-func (d *defaultDAL) SaveMeta(meta *notes.Meta) error {
+func (d *localDAL) SaveMeta(meta *notes.Meta) error {
 	metaPath := path.Join(d.notesDirectoryPath, d.metaFilename)
 	err := os.Rename(metaPath, metaPath+".bak")
 	if err != nil {
@@ -124,13 +123,13 @@ func (d *defaultDAL) SaveMeta(meta *notes.Meta) error {
 	return errors.Wrap(metaFile.Close(), "close meta file failed")
 }
 
-func (d *defaultDAL) getNotePath(id int) string {
+func (d *localDAL) getNotePath(id int) string {
 	noteFilename := fmt.Sprintf(d.noteFilenameFormat, id)
 	return path.Join(d.notesDirectoryPath, noteFilename)
 }
 
 // GetNote retrieves and decodes a Note from file
-func (d *defaultDAL) GetNote(id int) (*notes.Note, error) {
+func (d *localDAL) GetNote(id int) (*notes.Note, error) {
 	notePath := d.getNotePath(id)
 	noteFile, err := os.Open(notePath)
 	if err != nil {
@@ -148,7 +147,7 @@ func (d *defaultDAL) GetNote(id int) (*notes.Note, error) {
 }
 
 // SaveNote encodes and saves the provided Note to file
-func (d *defaultDAL) SaveNote(note *notes.Note) error {
+func (d *localDAL) SaveNote(note *notes.Note) error {
 	notePath := d.getNotePath(note.Meta.ID)
 	noteFile, err := os.Create(notePath)
 	if err != nil {
@@ -166,7 +165,7 @@ func (d *defaultDAL) SaveNote(note *notes.Note) error {
 }
 
 // RemoveNote deletes the note file
-func (d *defaultDAL) RemoveNote(id int) error {
+func (d *localDAL) RemoveNote(id int) error {
 	notePath := d.getNotePath(id)
 	err := os.Remove(notePath)
 	if err != nil {
