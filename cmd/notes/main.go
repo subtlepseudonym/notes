@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -139,9 +138,13 @@ func mainAction(ctx *cli.Context) error {
 		inInteractive = true
 	}
 
-	historyFile, err := ioutil.TempFile("", ".nts_history") // FIXME: update history file in dal periodically
+	home, err := homedir.Dir()
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "create history temp file failed"), 1)
+		return errors.Wrap(err, "get home directory failed")
+	}
+	historyFile, err := os.OpenFile(path.Join(home, defaultNotesDirectory, defaultHistoryFilePath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return cli.NewExitError(errors.Wrap(err, "open history file failed"), 1)
 	}
 	historyPath, err := filepath.Abs(historyFile.Name())
 	if err != nil {
