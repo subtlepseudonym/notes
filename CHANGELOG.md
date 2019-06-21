@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.1.0]
+## [1.1.0] - 2019-06-21
 ### Added
 - Interactive mode
 - Automatic note and meta updating in the background
@@ -19,3 +19,12 @@
 ### Fixed
 - Fix revision displayed with `info` command
 - Improve build tag counting of untracked files
+
+## [1.0.0] - 2019-03-19
+### Added
+- List existing notes command (ls)
+- Create new note command (new)
+- Edit existing notes command (edit)
+- Delete notes command (rm)
+- Local filesystem DAL
+- Note edit history
