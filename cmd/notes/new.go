@@ -80,6 +80,7 @@ func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 			Deleted: notes.JSONTime{time.Unix(0, 0)},
 		},
 	}
+	meta.LatestID = note.Meta.ID
 
 	body, err := editNote(ctx, dal, meta, note)
 	if err != nil {
@@ -106,7 +107,6 @@ func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 
 	meta.Size = metaSize
 	meta.Notes[note.Meta.ID] = note.Meta
-	meta.LatestID = note.Meta.ID
 	err = dal.SaveMeta(meta)
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "save meta failed"), 1)
