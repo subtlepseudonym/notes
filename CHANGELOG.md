@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.1.1] - 2019-07-02
+### Fixed
+- Write meta latestId field before user handoff in case editor crashes
+
 ## [1.1.0] - 2019-06-21
 ### Added
 - Interactive mode
