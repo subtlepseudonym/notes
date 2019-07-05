@@ -54,7 +54,7 @@ func WatchAndUpdate(dal DAL, meta *notes.Meta, note *notes.Note, filename string
 			if err != nil {
 				return errors.Wrap(err, "save meta failed")
 			}
-			log.Info("meta updated")
+			log.Info("meta updated", zap.Int("metaSize", meta.Size))
 		}
 	}
 
