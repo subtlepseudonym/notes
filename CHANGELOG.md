@@ -1,5 +1,7 @@
 # Changelog
 
+## [1.2.0] -
+
 ## [1.1.1] - 2019-07-02
 ### Fixed
 - Write meta latestId field before user handoff in case editor crashes
