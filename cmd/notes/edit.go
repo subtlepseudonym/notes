@@ -127,6 +127,7 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
 	}
+	zap.L().Named("edit").Info("note updated", zap.Int("noteID", note.Meta.ID))
 
 	metaSize, err := meta.ApproxSize()
 	if err != nil {
@@ -139,6 +140,7 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "save meta failed"), 1)
 	}
+	zap.L().Named("edit").Info("meta updated", zap.Int("metaSize", meta.Size))
 
 	return nil
 }

@@ -26,7 +26,6 @@ var (
 	Version       = "v0.0.0"
 	Revision      = "git_revision"
 	inInteractive = false
-	Logger        = zap.NewNop() // no-op logger in case we don't set one later
 )
 
 const (
@@ -119,14 +118,13 @@ func mainBefore(ctx *cli.Context) error {
 		return errors.Wrap(err, "get home directory failed")
 	}
 
+	logLevel := ctx.GlobalInt("verbosity")
 	logFile, err := os.OpenFile(path.Join(home, defaultNotesDirectory, defaultLogFilePath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return errors.Wrap(err, "open log file failed")
 	}
 
-	logLevel := ctx.GlobalInt("verbosity")
-
-	Logger = log.NewLogger(logFile, logLevel)
+	zap.ReplaceGlobals(log.NewLogger(logFile, logLevel))
 
 	return nil
 }
