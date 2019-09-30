@@ -59,6 +59,8 @@ func buildNewCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 }
 
 func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
+	logger := zap.L().Named(ctx.Command.Name)
+
 	newNoteID := meta.LatestID + 1
 	_, exists := meta.Notes[newNoteID]
 	if exists {
@@ -69,7 +71,7 @@ func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	if ctx.String("title") != "" {
 		title = ctx.String("title")
 	} else {
-		title = generateDateTitle(ctx.String("title-format"), ctx.String("title-location"))
+		title = generateDateTitle(ctx.String("title-format"), ctx.String("title-location"), logger)
 	}
 
 	note := &notes.Note{
@@ -99,7 +101,7 @@ func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 		// FIXME: persist the note somewhere if saving it fails
 		return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
 	}
-	zap.L().Named("new").Info("note updated", zap.Int("noteID", note.Meta.ID))
+	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
 	metaSize, err := meta.ApproxSize()
 	if err != nil {
@@ -112,16 +114,16 @@ func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "save meta failed"), 1)
 	}
-	zap.L().Named("new").Info("meta updated", zap.Int("metaSize", meta.Size))
+	logger.Info("meta updated", zap.Int("metaSize", meta.Size))
 
 	return nil
 }
 
-func generateDateTitle(format, location string) string {
+func generateDateTitle(format, location string, logger *zap.Logger) string {
 	var loc *time.Location
 	l, err := time.LoadLocation(location)
 	if err != nil {
-		zap.L().Warn("load location failed, defaulting to UTC", zap.String("location", location), zap.String("format", format), zap.Error(err))
+		logger.Warn("load location failed, defaulting to UTC", zap.String("location", location), zap.String("format", format), zap.Error(err))
 		loc = time.UTC
 	} else {
 		loc = l

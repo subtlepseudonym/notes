@@ -82,6 +82,8 @@ func getNoteID(meta *notes.Meta, arg string, searchDepth int) (int, error) {
 }
 
 func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
+	logger := zap.L().Named(ctx.Command.Name)
+
 	noteID, err := getNoteID(meta, ctx.Args().First(), ctx.Int("latest-depth"))
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "get note ID failed"), 1)
@@ -127,7 +129,7 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
 	}
-	zap.L().Named("edit").Info("note updated", zap.Int("noteID", note.Meta.ID))
+	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
 	metaSize, err := meta.ApproxSize()
 	if err != nil {
@@ -140,7 +142,7 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	if err != nil {
 		return cli.NewExitError(errors.Wrap(err, "save meta failed"), 1)
 	}
-	zap.L().Named("edit").Info("meta updated", zap.Int("metaSize", meta.Size))
+	logger.Info("meta updated", zap.Int("metaSize", meta.Size))
 
 	return nil
 }

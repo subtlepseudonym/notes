@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 )
 
 func buildRemoveCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
@@ -29,6 +30,8 @@ func buildRemoveCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 }
 
 func rmAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
+	logger := zap.L().Named(ctx.Command.Name)
+
 	if !ctx.Args().Present() {
 		return cli.NewExitError(errors.New("note ID argument is required"), 1)
 	}
@@ -56,6 +59,7 @@ func rmAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 		if err != nil {
 			return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
 		}
+		logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
 		meta.Notes[note.Meta.ID] = note.Meta
 	}
