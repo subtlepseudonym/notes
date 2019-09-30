@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strconv"
 	"time"
 
@@ -80,32 +79,6 @@ func getNoteID(meta *notes.Meta, arg string, searchDepth int) (int, error) {
 	}
 
 	return noteID, nil
-}
-
-func editNote(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta, note *notes.Note) (string, error) {
-	file, err := ioutil.TempFile("", "note")
-	if err != nil {
-		return "", errors.Wrap(err, "create temp file failed")
-	}
-	defer file.Close()
-
-	stop := make(chan struct{})
-	if !ctx.Bool("no-watch") {
-		go func() {
-			err := dalpkg.WatchAndUpdate(dal, meta, note, file.Name(), ctx.Duration("update-period"), stop, Logger)
-			if err != nil {
-				Logger.Error("watch and updated failed", zap.Error(err), zap.Int("noteID", note.Meta.ID), zap.String("filename", file.Name()))
-			}
-		}()
-	}
-
-	body, err := notes.GetNoteBodyFromUser(file, ctx.String("editor"), note.Body)
-	if err != nil {
-		return "", errors.Wrap(err, "get note body from user failed")
-	}
-	close(stop)
-
-	return body, nil
 }
 
 func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {

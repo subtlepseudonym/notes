@@ -2,10 +2,6 @@ package notes
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"os"
-	"os/exec"
 	"time"
 
 	"github.com/pkg/errors"
@@ -108,29 +104,4 @@ func (n *Note) AppendEdit(timestamp time.Time) (*Note, error) {
 	}
 
 	return n, nil
-}
-
-// GetNoteBodyFromUser drops the user into the provided editor command before
-// retrieving the contents of the edited file
-func GetNoteBodyFromUser(file *os.File, editor, existingBody string) (string, error) {
-	_, err := fmt.Fprint(file, existingBody)
-	if err != nil {
-		return "", errors.Wrap(err, "print existing body to temporary file failed")
-	}
-
-	cmd := exec.Command(editor, file.Name())
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-
-	err = cmd.Run()
-	if err != nil {
-		return "", errors.Wrap(err, "run editor command failed")
-	}
-
-	bodyBytes, err := ioutil.ReadFile(file.Name())
-	if err != nil {
-		return "", errors.Wrap(err, "read temporary file failed")
-	}
-
-	return string(bodyBytes), nil
 }
