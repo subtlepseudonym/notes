@@ -1,6 +1,12 @@
 # Changelog
 
 ## [1.2.0] -
+### Added
+- Generate release candidate versions for \*-rc branches in build tag script
+- Log DAL actions
+
+### Changed
+- Use global zap logger (rather than passing one object around)
 
 ## [1.1.1] - 2019-07-02
 ### Fixed
@@ -14,7 +20,7 @@
 - History for interactive mode
 
 ### Changed
-- Make command help text more helpful (and the format was standardized)
+- Make command help text more helpful (and standardize format)
 - Improve `edit` command's ability to find the latest note when no ID is provided
 - Provide more descriptive build tag in semantic version
 - Trim exit command in interactive mode
