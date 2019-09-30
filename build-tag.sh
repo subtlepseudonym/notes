@@ -14,6 +14,11 @@ for line in $(git ls-files --others --exclude-standard); do
 done
 
 version=$(git describe --abbrev=0)
+branch=$(git rev-parse --abbrev-ref HEAD)
+if [[ "${branch}" == *-rc ]]; then
+	version="${branch}"
+fi
+
 short_rev=$(git rev-list -n1 --abbrev-commit HEAD)
 rev_name=$(git name-rev --name-only HEAD)
 
