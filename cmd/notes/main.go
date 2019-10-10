@@ -124,7 +124,8 @@ func mainBefore(ctx *cli.Context) error {
 		return errors.Wrap(err, "open log file failed")
 	}
 
-	zap.ReplaceGlobals(log.NewLogger(logFile, logLevel))
+	logger := log.NewLogger(logFile, logLevel).With(zap.String("version", Version))
+	zap.ReplaceGlobals(logger)
 
 	return nil
 }
