@@ -29,6 +29,10 @@ func buildNewCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 				Name:  "no-watch",
 				Usage: "don't save note in background",
 			},
+			cli.BoolFlag{
+				Name:  "no-history",
+				Usage: "don't record activity in edit history",
+			},
 			cli.StringFlag{
 				Name:  "title, t",
 				Usage: "note title",
@@ -90,10 +94,11 @@ func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	}
 	note.Body = body
 
-	// TODO: add option to not append edit to history
-	note, err = note.AppendEdit(time.Now())
-	if err != nil {
-		return fmt.Errorf("append edit to note history: %w", err)
+	if !ctx.Bool("no-history") {
+		note, err = note.AppendEdit(time.Now())
+		if err != nil {
+			return fmt.Errorf("append edit to note history: %w", err)
+		}
 	}
 
 	err = dal.SaveNote(note)
