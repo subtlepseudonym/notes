@@ -9,6 +9,8 @@
 - Use global zap logger (rather than passing one object around)
 - Include main package version in logs
 - Upgrade to go1.13 error wrapping
+
+### Fixed
 - Handle errors more gracefully in interactive mode
 
 ## [1.1.1] - 2019-07-02
