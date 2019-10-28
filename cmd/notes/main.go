@@ -72,13 +72,13 @@ func main() {
 
 	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: option to use different dal
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "runtime error: initialize dal: %v", err)
+		fmt.Fprintf(app.ErrWriter, "runtime error: initialize dal: %v", err)
 		os.Exit(1)
 	}
 
 	meta, err := dal.GetMeta()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "runtime error: get meta: %v", err)
+		fmt.Fprintf(app.ErrWriter, "runtime error: get meta: %v", err)
 		os.Exit(1)
 	}
 
@@ -103,7 +103,7 @@ func main() {
 
 	err = app.Run(os.Args)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "runtime error: %s", err)
+		fmt.Fprintf(app.ErrWriter, "runtime error: %s", err)
 		os.Exit(1)
 	}
 }
