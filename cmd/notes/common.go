@@ -11,7 +11,6 @@ import (
 	"github.com/subtlepseudonym/notes"
 	dalpkg "github.com/subtlepseudonym/notes/dal"
 
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -21,7 +20,7 @@ import (
 func editNote(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta, note *notes.Note) (string, error) {
 	file, err := ioutil.TempFile("", "note")
 	if err != nil {
-		return "", errors.Wrap(err, "create temp file failed")
+		return "", fmt.Errorf("create temporary file: %w", err)
 	}
 	defer file.Close()
 
@@ -37,7 +36,7 @@ func editNote(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta, note *notes.No
 
 	body, err := getNoteBodyFromUser(file, ctx.String("editor"), note.Body)
 	if err != nil {
-		return "", errors.Wrap(err, "get note body from user failed")
+		return "", fmt.Errorf("get note body from user: %w", err)
 	}
 	close(stop)
 
@@ -58,7 +57,7 @@ func watchAndUpdate(dal dalpkg.DAL, meta *notes.Meta, note *notes.Note, filename
 		case timestamp := <-ticker.C:
 			b, err := ioutil.ReadFile(filename)
 			if err != nil {
-				return errors.Wrap(err, "read file failed") // FIXME: might want to log these rather than returning
+				return fmt.Errorf("read file: %w", err) // FIXME: might want to log these rather than returning
 			}
 
 			if bytes.Equal(b, []byte(note.Body)) {
@@ -68,25 +67,25 @@ func watchAndUpdate(dal dalpkg.DAL, meta *notes.Meta, note *notes.Note, filename
 			note.Body = string(b)
 			note, err = note.AppendEdit(timestamp)
 			if err != nil {
-				return errors.Wrap(err, "append edit history failed")
+				return fmt.Errorf("append edit to history: %w", err)
 			}
 
 			err = dal.SaveNote(note)
 			if err != nil {
-				return errors.Wrap(err, "save note failed")
+				return fmt.Errorf("save note: %w", err)
 			}
 			zap.L().Named("watch").Info("note updated", zap.Int("noteID", note.Meta.ID))
 
 			metaSize, err := meta.ApproxSize()
 			if err != nil {
-				return errors.Wrap(err, "get meta size failed")
+				return fmt.Errorf("get meta size: %w", err)
 			}
 
 			meta.Size = metaSize
 			meta.Notes[note.Meta.ID] = note.Meta
 			err = dal.SaveMeta(meta)
 			if err != nil {
-				return errors.Wrap(err, "save meta failed")
+				return fmt.Errorf("save meta: %w", err)
 			}
 			zap.L().Named("watch").Info("meta updated", zap.Int("metaSize", meta.Size))
 		}
@@ -100,7 +99,7 @@ func watchAndUpdate(dal dalpkg.DAL, meta *notes.Meta, note *notes.Note, filename
 func getNoteBodyFromUser(file *os.File, editor, existingBody string) (string, error) {
 	_, err := fmt.Fprint(file, existingBody)
 	if err != nil {
-		return "", errors.Wrap(err, "print existing body to temporary file failed")
+		return "", fmt.Errorf("print existing body to temporary file: %w", err)
 	}
 
 	cmd := exec.Command(editor, file.Name())
@@ -109,12 +108,12 @@ func getNoteBodyFromUser(file *os.File, editor, existingBody string) (string, er
 
 	err = cmd.Run()
 	if err != nil {
-		return "", errors.Wrap(err, "run editor command failed")
+		return "", fmt.Errorf("run editor command: %w", err)
 	}
 
 	bodyBytes, err := ioutil.ReadFile(file.Name())
 	if err != nil {
-		return "", errors.Wrap(err, "read temporary file failed")
+		return "", fmt.Errorf("read temporary file: %w", err)
 	}
 
 	return string(bodyBytes), nil

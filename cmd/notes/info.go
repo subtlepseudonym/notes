@@ -10,7 +10,6 @@ import (
 	"github.com/subtlepseudonym/notes"
 	dalpkg "github.com/subtlepseudonym/notes/dal"
 
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 )
 
@@ -39,12 +38,12 @@ func infoAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 
 	noteID, err := strconv.ParseInt(ctx.Args().First(), 16, 64)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "parse note ID failed"), 1)
+		return cli.NewExitError(fmt.Errorf("parse noteID argument: %w", err), 1)
 	}
 
 	note, err := dal.GetNote(int(noteID))
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get note file failed"), 1)
+		return cli.NewExitError(fmt.Errorf("get note file: %w", err), 1)
 	}
 
 	return printNoteInfo(ctx, meta, note)

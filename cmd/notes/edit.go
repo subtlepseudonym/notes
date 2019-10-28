@@ -8,7 +8,6 @@ import (
 	"github.com/subtlepseudonym/notes"
 	dalpkg "github.com/subtlepseudonym/notes/dal"
 
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -61,7 +60,7 @@ func getNoteID(meta *notes.Meta, arg string, searchDepth int) (int, error) {
 	if arg != "" {
 		noteID64, err := strconv.ParseInt(arg, 16, 64)
 		if err != nil {
-			return 0, errors.Wrap(err, "parse base 16 noteID argument failed")
+			return 0, fmt.Errorf("parse noteID argument: %w", err)
 		}
 		noteID = int(noteID64)
 	} else {
@@ -86,12 +85,12 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 
 	noteID, err := getNoteID(meta, ctx.Args().First(), ctx.Int("latest-depth"))
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get note ID failed"), 1)
+		return cli.NewExitError(fmt.Errorf("get note ID: %w", err), 1)
 	}
 
 	note, err := dal.GetNote(noteID)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get note failed"), 1)
+		return cli.NewExitError(fmt.Errorf("get note: %w", err), 1)
 	}
 
 	var changed bool
@@ -107,7 +106,7 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 
 	body, err := editNote(ctx, dal, meta, note)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "user handoff failed"), 1)
+		return cli.NewExitError(fmt.Errorf("user handoff: %w", err), 1)
 	}
 
 	if note.Body != body {
@@ -122,25 +121,25 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	// TODO: add option to not append edit to history
 	note, err = note.AppendEdit(time.Now())
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "append edit to note history failed"), 1)
+		return cli.NewExitError(fmt.Errorf("append edit to note history: %w", err), 1)
 	}
 
 	err = dal.SaveNote(note)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
+		return cli.NewExitError(fmt.Errorf("save note: %w", err), 1)
 	}
 	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
 	metaSize, err := meta.ApproxSize()
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get meta size failed"), 1)
+		return cli.NewExitError(fmt.Errorf("get meta size: %w", err), 1)
 	}
 
 	meta.Size = metaSize
 	meta.Notes[note.Meta.ID] = note.Meta
 	err = dal.SaveMeta(meta)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "save meta failed"), 1)
+		return cli.NewExitError(fmt.Errorf("save meta: %w", err), 1)
 	}
 	logger.Info("meta updated", zap.Int("metaSize", meta.Size))
 

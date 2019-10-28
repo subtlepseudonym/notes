@@ -2,9 +2,8 @@ package notes
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
-
-	"github.com/pkg/errors"
 )
 
 const defaultEditHistorySize = 16
@@ -24,7 +23,7 @@ type Meta struct {
 func (m Meta) ApproxSize() (int, error) {
 	b, err := json.Marshal(m)
 	if err != nil {
-		return 0, errors.Wrap(err, "encode meta failed")
+		return 0, fmt.Errorf("encode meta: %w", err)
 	}
 
 	return len(b), nil
@@ -80,7 +79,7 @@ type Note struct {
 func (n Note) ApproxSize() (int, error) {
 	b, err := json.Marshal(n)
 	if err != nil {
-		return 0, errors.Wrap(err, "encode note failed")
+		return 0, fmt.Errorf("encode note: %w", err)
 	}
 
 	return len(b), nil
@@ -91,7 +90,7 @@ func (n Note) ApproxSize() (int, error) {
 func (n *Note) AppendEdit(timestamp time.Time) (*Note, error) {
 	noteSize, err := n.ApproxSize()
 	if err != nil {
-		return n, errors.Wrap(err, "get note size failed")
+		return n, fmt.Errorf("get note size: %w", err)
 	}
 
 	update := EditHistory{

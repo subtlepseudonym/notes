@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -15,7 +16,6 @@ import (
 	"github.com/chzyer/readline"
 	"github.com/kballard/go-shellquote"
 	"github.com/mitchellh/go-homedir"
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -72,13 +72,13 @@ func main() {
 
 	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: option to use different dal
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "runtime error: %s", errors.Wrap(err, "initialize dal failed"))
+		fmt.Fprintf(os.Stderr, "runtime error: initialize dal: %v", err)
 		os.Exit(1)
 	}
 
 	meta, err := dal.GetMeta()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "runtime error: %s", errors.Wrap(err, "get meta failed"))
+		fmt.Fprintf(os.Stderr, "runtime error: get meta: %v", err)
 		os.Exit(1)
 	}
 
@@ -115,13 +115,13 @@ func mainBefore(ctx *cli.Context) error {
 
 	home, err := homedir.Dir()
 	if err != nil {
-		return errors.Wrap(err, "get home directory failed")
+		return fmt.Errorf("get home directory: %w", err)
 	}
 
 	logLevel := ctx.GlobalInt("verbosity")
 	logFile, err := os.OpenFile(path.Join(home, defaultNotesDirectory, defaultLogFilePath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return errors.Wrap(err, "open log file failed")
+		return fmt.Errorf("open log file: %w", err)
 	}
 
 	logger := log.NewLogger(logFile, logLevel).With(zap.String("version", Version))
@@ -139,15 +139,15 @@ func mainAction(ctx *cli.Context) error {
 
 	home, err := homedir.Dir()
 	if err != nil {
-		return errors.Wrap(err, "get home directory failed")
+		return fmt.Errorf("get home diretory: %w", err)
 	}
 	historyFile, err := os.OpenFile(path.Join(home, defaultNotesDirectory, defaultHistoryFilePath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "open history file failed"), 1)
+		return cli.NewExitError(fmt.Errorf("open history file: %w", err), 1)
 	}
 	historyPath, err := filepath.Abs(historyFile.Name())
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get history file path failed"), 1)
+		return cli.NewExitError(fmt.Errorf("get history file path: %w", err), 1)
 	}
 
 	config := &readline.Config{
@@ -161,21 +161,21 @@ func mainAction(ctx *cli.Context) error {
 
 	reader, err := readline.NewEx(config)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "create reader failed"), 1)
+		return cli.NewExitError(fmt.Errorf("create reader: %w", err), 1)
 	}
 
 	for {
 		line, err := reader.Readline()
-		if err == readline.ErrInterrupt {
+		if errors.Is(err, readline.ErrInterrupt) {
 			if len(line) == 0 {
 				break
 			} else {
 				continue
 			}
-		} else if err == io.EOF {
+		} else if errors.Is(err, io.EOF) {
 			break
 		} else if err != nil { // As of readline@2972be2 err will only ever be readline.ErrInterrupt, io.EOF, nil
-			return cli.NewExitError(errors.Wrap(err, "read line failed"), 1)
+			return cli.NewExitError(fmt.Errorf("read line: %w", err), 1)
 		}
 
 		if strings.TrimSpace(line) == "exit" {
@@ -184,12 +184,12 @@ func mainAction(ctx *cli.Context) error {
 
 		args, err := shellquote.Split(line)
 		if err != nil {
-			return cli.NewExitError(errors.Wrap(err, "shellquote split failed"), 1)
+			return cli.NewExitError(fmt.Errorf("shellquote split: %w", err), 1)
 		}
 
 		err = ctx.App.Run(append([]string{ctx.App.Name}, args...))
 		if err != nil {
-			return cli.NewExitError(errors.Wrap(err, "app run failed"), 1)
+			return cli.NewExitError(fmt.Errorf("app run: %w", err), 1)
 		}
 	}
 

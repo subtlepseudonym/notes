@@ -1,12 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/subtlepseudonym/notes"
 	dalpkg "github.com/subtlepseudonym/notes/dal"
 
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -64,7 +64,7 @@ func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	newNoteID := meta.LatestID + 1
 	_, exists := meta.Notes[newNoteID]
 	if exists {
-		return cli.NewExitError(errors.New("note ID is not unique"), 1)
+		return cli.NewExitError(fmt.Errorf("note ID: must be unique"), 1)
 	}
 
 	var title string
@@ -86,33 +86,33 @@ func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 
 	body, err := editNote(ctx, dal, meta, note)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "user handoff failed"), 1)
+		return cli.NewExitError(fmt.Errorf("user handoff: %w", err), 1)
 	}
 	note.Body = body
 
 	// TODO: add option to not append edit to history
 	note, err = note.AppendEdit(time.Now())
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "append edit to note history failed"), 1)
+		return cli.NewExitError(fmt.Errorf("append edit to note history: %w", err), 1)
 	}
 
 	err = dal.SaveNote(note)
 	if err != nil {
 		// FIXME: persist the note somewhere if saving it fails
-		return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
+		return cli.NewExitError(fmt.Errorf("save note: %w", err), 1)
 	}
 	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
 	metaSize, err := meta.ApproxSize()
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get meta size failed"), 1)
+		return cli.NewExitError(fmt.Errorf("get meta size: %w", err), 1)
 	}
 
 	meta.Size = metaSize
 	meta.Notes[note.Meta.ID] = note.Meta
 	err = dal.SaveMeta(meta)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "save meta failed"), 1)
+		return cli.NewExitError(fmt.Errorf("save meta: %w", err), 1)
 	}
 	logger.Info("meta updated", zap.Int("metaSize", meta.Size))
 
