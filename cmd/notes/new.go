@@ -64,7 +64,7 @@ func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	newNoteID := meta.LatestID + 1
 	_, exists := meta.Notes[newNoteID]
 	if exists {
-		return cli.NewExitError(fmt.Errorf("note ID: must be unique"), 1)
+		return fmt.Errorf("note ID: must be unique")
 	}
 
 	var title string
@@ -86,33 +86,33 @@ func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 
 	body, err := editNote(ctx, dal, meta, note)
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("user handoff: %w", err), 1)
+		return fmt.Errorf("user handoff: %w", err)
 	}
 	note.Body = body
 
 	// TODO: add option to not append edit to history
 	note, err = note.AppendEdit(time.Now())
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("append edit to note history: %w", err), 1)
+		return fmt.Errorf("append edit to note history: %w", err)
 	}
 
 	err = dal.SaveNote(note)
 	if err != nil {
 		// FIXME: persist the note somewhere if saving it fails
-		return cli.NewExitError(fmt.Errorf("save note: %w", err), 1)
+		return fmt.Errorf("save note: %w", err)
 	}
 	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
 	metaSize, err := meta.ApproxSize()
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("get meta size: %w", err), 1)
+		return fmt.Errorf("get meta size: %w", err)
 	}
 
 	meta.Size = metaSize
 	meta.Notes[note.Meta.ID] = note.Meta
 	err = dal.SaveMeta(meta)
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("save meta: %w", err), 1)
+		return fmt.Errorf("save meta: %w", err)
 	}
 	logger.Info("meta updated", zap.Int("metaSize", meta.Size))
 

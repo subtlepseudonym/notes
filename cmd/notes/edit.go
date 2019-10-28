@@ -85,12 +85,12 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 
 	noteID, err := getNoteID(meta, ctx.Args().First(), ctx.Int("latest-depth"))
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("get note ID: %w", err), 1)
+		return fmt.Errorf("get note ID: %w", err)
 	}
 
 	note, err := dal.GetNote(noteID)
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("get note: %w", err), 1)
+		return fmt.Errorf("get note: %w", err)
 	}
 
 	var changed bool
@@ -106,7 +106,7 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 
 	body, err := editNote(ctx, dal, meta, note)
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("user handoff: %w", err), 1)
+		return fmt.Errorf("user handoff: %w", err)
 	}
 
 	if note.Body != body {
@@ -121,25 +121,25 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	// TODO: add option to not append edit to history
 	note, err = note.AppendEdit(time.Now())
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("append edit to note history: %w", err), 1)
+		return fmt.Errorf("append edit to note history: %w", err)
 	}
 
 	err = dal.SaveNote(note)
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("save note: %w", err), 1)
+		return fmt.Errorf("save note: %w", err)
 	}
 	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
 	metaSize, err := meta.ApproxSize()
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("get meta size: %w", err), 1)
+		return fmt.Errorf("get meta size: %w", err)
 	}
 
 	meta.Size = metaSize
 	meta.Notes[note.Meta.ID] = note.Meta
 	err = dal.SaveMeta(meta)
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("save meta: %w", err), 1)
+		return fmt.Errorf("save meta: %w", err)
 	}
 	logger.Info("meta updated", zap.Int("metaSize", meta.Size))
 

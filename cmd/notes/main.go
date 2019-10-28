@@ -72,13 +72,13 @@ func main() {
 
 	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: option to use different dal
 	if err != nil {
-		fmt.Fprintf(app.ErrWriter, "runtime error: initialize dal: %v", err)
+		fmt.Fprintf(app.ErrWriter, "initialize dal: %v", err)
 		os.Exit(1)
 	}
 
 	meta, err := dal.GetMeta()
 	if err != nil {
-		fmt.Fprintf(app.ErrWriter, "runtime error: get meta: %v", err)
+		fmt.Fprintf(app.ErrWriter, "get meta: %v", err)
 		os.Exit(1)
 	}
 
@@ -103,7 +103,8 @@ func main() {
 
 	err = app.Run(os.Args)
 	if err != nil {
-		fmt.Fprintf(app.ErrWriter, "runtime error: %s", err)
+		zap.L().Error("Failed to run command", zap.Error(err), zap.Strings("args", os.Args))
+		fmt.Fprintln(app.ErrWriter, err)
 		os.Exit(1)
 	}
 }
@@ -189,7 +190,12 @@ func mainAction(ctx *cli.Context) error {
 
 		err = ctx.App.Run(append([]string{ctx.App.Name}, args...))
 		if err != nil {
-			return cli.NewExitError(fmt.Errorf("app run: %w", err), 1)
+			if errors.Is(err, &cli.ExitError{}) {
+				return cli.NewExitError(err, 1)
+			} else {
+				zap.L().Error("Failed to run command", zap.Error(err), zap.Strings("args", args))
+				fmt.Fprintln(ctx.App.ErrWriter, err)
+			}
 		}
 	}
 

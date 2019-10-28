@@ -38,12 +38,12 @@ func infoAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 
 	noteID, err := strconv.ParseInt(ctx.Args().First(), 16, 64)
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("parse noteID argument: %w", err), 1)
+		return fmt.Errorf("parse noteID argument: %w", err)
 	}
 
 	note, err := dal.GetNote(int(noteID))
 	if err != nil {
-		return cli.NewExitError(fmt.Errorf("get note file: %w", err), 1)
+		return fmt.Errorf("get note file: %w", err)
 	}
 
 	return printNoteInfo(ctx, meta, note)
