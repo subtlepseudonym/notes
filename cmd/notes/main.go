@@ -83,6 +83,7 @@ func main() {
 	}
 
 	app.Commands = []cli.Command{
+		buildDebugCommand(dal, meta),
 		buildListCommand(dal, meta),
 		buildNewCommand(dal, meta),
 		buildRemoveCommand(dal, meta),

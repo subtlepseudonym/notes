@@ -10,6 +10,9 @@ all: test build
 build: format
 	go build ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
 
+dev-build: format
+	go build -tags debug ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
+
 test:
 	gotest --race -v ./...
 

@@ -6,6 +6,7 @@
 - Log DAL actions
 - Lots of additional logging
 - Add flag for writing / editing notes without appending to the note's edit history
+- Debug commands for accessing lower level functionality
 
 ### Changed
 - Use global zap logger (rather than passing one object around)
