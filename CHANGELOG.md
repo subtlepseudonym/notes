@@ -4,6 +4,8 @@
 ### Added
 - Generate release candidate versions for \*-rc branches in build tag script
 - Log DAL actions
+- Lots of additional logging
+- Add flag for writing / editing notes without appending to the note's edit history
 
 ### Changed
 - Use global zap logger (rather than passing one object around)
