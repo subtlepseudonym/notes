@@ -39,7 +39,7 @@ func buildEditCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 				Name:   "editor",
 				Usage:  "text editor command",
 				Value:  defaultEditor,
-				EnvVar: "EDTIOR",
+				EnvVar: "EDITOR",
 			},
 			cli.IntFlag{
 				Name:  "latest-depth",
