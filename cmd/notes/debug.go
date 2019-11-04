@@ -20,6 +20,7 @@ func buildDebugCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 		Description: "Access lower-level structures, implementation details, and other debugging utilities. The behavior of this command and its subcommands are subject to breaking changes across non-major releases",
 		Subcommands: []cli.Command{
 			buildGetNote(dal),
+			buildGetMeta(dal, meta),
 		},
 	}
 }
@@ -62,6 +63,44 @@ func getNoteAction(ctx *cli.Context, dal dalpkg.DAL) error {
 	}
 
 	b, err := json.Marshal(note)
+	if err != nil {
+		return fmt.Errorf("marshal note: %w", err)
+	}
+
+	_, err = fmt.Fprintln(ctx.App.Writer, string(b))
+	if err != nil {
+		return fmt.Errorf("write to app writer: %w", err)
+	}
+	return nil
+}
+
+func buildGetMeta(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+	return cli.Command{
+		Name:        "get-meta",
+		Usage:       "print meta structure",
+		Description: "Print the contents of the meta file as a json object",
+		Action: func(ctx *cli.Context) error {
+			return getMetaAction(ctx, dal, meta)
+		},
+		Flags: []cli.Flag{
+			cli.BoolFlag{
+				Name:  "in-memory",
+				Usage: "get meta that's currently in memory",
+			},
+		},
+	}
+}
+
+func getMetaAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
+	if !ctx.Bool("in-memory") {
+		var err error
+		meta, err = dal.GetMeta()
+		if err != nil {
+			return fmt.Errorf("get meta from dal: %w", err)
+		}
+	}
+
+	b, err := json.Marshal(meta)
 	if err != nil {
 		return fmt.Errorf("marshal note: %w", err)
 	}
