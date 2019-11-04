@@ -4,7 +4,7 @@
 ### Added
 - Generate release candidate versions for \*-rc branches in build tag script
 - Loads of additional logging
-- Add flag for writing / editing notes without appending to the note's edit history
+- Flag for writing / editing notes without appending to the note's edit history
 - Debug commands for accessing lower level functionality
 
 ### Changed
