@@ -19,19 +19,19 @@ func buildDebugCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 		Usage:       "access debugging tools",
 		Description: "Access lower-level structures, implementation details, and other debugging utilities. The behavior of this command and its subcommands are subject to breaking changes across non-major releases",
 		Subcommands: []cli.Command{
-			buildGetNote(dal, meta),
+			buildGetNote(dal),
 		},
 	}
 }
 
-func buildGetNote(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+func buildGetNote(dal dalpkg.DAL) cli.Command {
 	return cli.Command{
 		Name:        "get-note",
 		Usage:       "print note structure",
-		Description: "Print the contents of a note file as a go structure",
+		Description: "Print the contents of a note file as a json object",
 		ArgsUsage:   "<noteID>",
 		Action: func(ctx *cli.Context) error {
-			return getNoteAction(ctx, dal, meta)
+			return getNoteAction(ctx, dal)
 		},
 		Flags: []cli.Flag{
 			cli.BoolFlag{
@@ -42,7 +42,7 @@ func buildGetNote(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 	}
 }
 
-func getNoteAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
+func getNoteAction(ctx *cli.Context, dal dalpkg.DAL) error {
 	if !ctx.Args().Present() {
 		return fmt.Errorf("usage: noteID argument required")
 	}
@@ -61,7 +61,7 @@ func getNoteAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 		note.Body = "[EXCLUDED]"
 	}
 
-	b, err := json.MarshalIndent(note, "", "  ")
+	b, err := json.Marshal(note)
 	if err != nil {
 		return fmt.Errorf("marshal note: %w", err)
 	}
