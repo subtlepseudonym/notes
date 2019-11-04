@@ -66,6 +66,9 @@ func getNoteAction(ctx *cli.Context, dal dalpkg.DAL) error {
 		return fmt.Errorf("marshal note: %w", err)
 	}
 
-	fmt.Fprintln(ctx.App.Writer, string(b))
+	_, err = fmt.Fprintln(ctx.App.Writer, string(b))
+	if err != nil {
+		return fmt.Errorf("write to app writer: %w", err)
+	}
 	return nil
 }
