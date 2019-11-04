@@ -3,8 +3,7 @@
 ## [1.2.0] -
 ### Added
 - Generate release candidate versions for \*-rc branches in build tag script
-- Log DAL actions
-- Lots of additional logging
+- Loads of additional logging
 - Add flag for writing / editing notes without appending to the note's edit history
 - Debug commands for accessing lower level functionality
 
@@ -12,6 +11,7 @@
 - Use global zap logger (rather than passing one object around)
 - Include main package version in logs
 - Upgrade to go1.13 error wrapping
+- List build tags in app info if any are present
 
 ### Fixed
 - Handle errors more gracefully in interactive mode

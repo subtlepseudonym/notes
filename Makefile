@@ -3,15 +3,17 @@ BINARY=notes
 BUILD=$$(bash build-tag.sh)
 
 REVISION=`git rev-list -n1 HEAD`
-LDFLAGS=--ldflags "-X main.Version=${BUILD} -X main.Revision=${REVISION}"
+BUILDTAGS=
+LDFLAGS=--ldflags "-X main.Version=${BUILD} -X main.Revision=${REVISION} -X \"main.BuildTags=${BUILDTAGS}\""
 
 all: test build
 
 build: format
 	go build ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
 
+dev-build: BUILDTAGS=debug
 dev-build: format
-	go build -tags debug ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
+	go build -tags "${BUILDTAGS}" ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
 
 test:
 	gotest --race -v ./...

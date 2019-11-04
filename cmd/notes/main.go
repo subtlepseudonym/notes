@@ -25,6 +25,7 @@ import (
 var (
 	Version       = "v0.0.0"
 	Revision      = "git_revision"
+	BuildTags     = "list of flags"
 	inInteractive = false
 )
 
@@ -96,10 +97,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	extraInfo := make(map[string]string)
+	extraInfo["revision"] = Revision
+	if BuildTags != "" {
+		extraInfo["tags"] = BuildTags
+	}
 	app.ExtraInfo = func() map[string]string {
-		return map[string]string{
-			"revision": Revision,
-		}
+		return extraInfo
 	}
 
 	err = app.Run(os.Args)
