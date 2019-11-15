@@ -1,6 +1,6 @@
 BINARY=notes
 
-BUILD=$$(bash build-tag.sh)
+BUILD=$$(vtag)
 
 REVISION=`git rev-list -n1 HEAD`
 BUILDTAGS=
