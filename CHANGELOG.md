@@ -12,6 +12,7 @@
 - Include main package version in logs
 - Upgrade to go1.13 error wrapping
 - List build tags in app info if any are present
+- Generate version / build tag with a go utility rather than a script
 
 ### Fixed
 - Handle errors more gracefully in interactive mode
