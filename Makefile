@@ -6,6 +6,8 @@ REVISION=`git rev-list -n1 HEAD`
 BUILDTAGS=
 LDFLAGS=--ldflags "-X main.Version=${BUILD} -X main.Revision=${REVISION} -X \"main.BuildTags=${BUILDTAGS}\""
 
+default: all
+
 all: test build
 
 build: format
@@ -31,3 +33,5 @@ clean:
 
 get-tag:
 	echo ${BUILD}
+
+.PHONY: all build dev-build test test-all format fmt clean get-tag
