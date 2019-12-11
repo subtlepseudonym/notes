@@ -17,6 +17,10 @@
 ### Fixed
 - Handle errors more gracefully in interactive mode
 
+## [1.1.2] - 2019-11-14
+### Changed
+- Updated to go1.13
+
 ## [1.1.1] - 2019-07-02
 ### Fixed
 - Write meta latestId field before user handoff in case editor crashes
