@@ -30,8 +30,6 @@ var (
 )
 
 const (
-	defaultEditor          = "vim"
-	defaultUpdatePeriod    = 5 * time.Minute
 	defaultNotesDirectory  = ".notes"
 	defaultHistoryFilePath = ".nts_history"
 	defaultLogFilePath     = ".nts_log"

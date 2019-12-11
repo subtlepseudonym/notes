@@ -15,6 +15,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	defaultEditor       = "vim"
+	defaultUpdatePeriod = 5 * time.Minute
+)
+
 // editNote is a helper function for turning control over to the user and getting
 // a new note body from them
 func editNote(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta, note *notes.Note) (string, error) {
