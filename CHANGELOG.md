@@ -6,16 +6,20 @@
 - Loads of additional logging
 - Flag for writing / editing notes without appending to the note's edit history
 - Debug commands for accessing lower level functionality
+- Automatically update meta version (unless app version is a major release ahead)
 
 ### Changed
-- Use global zap logger (rather than passing one object around)
+- Use zap logging
 - Include main package version in logs
 - Upgrade to go1.13 error wrapping
 - List build tags in app info if any are present
 - Generate version / build tag with a go utility rather than a script
+- Deprecated notes/log package
 
 ### Fixed
 - Handle errors more gracefully in interactive mode
+- Initialize logger / home directory value once
+- Stop using package global logger
 
 ## [1.1.2] - 2019-11-14
 ### Changed
