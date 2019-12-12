@@ -127,7 +127,7 @@ func (a *App) before(ctx *cli.Context) error {
 		a.homeDir = home
 	}
 
-	if a.logger != nil {
+	if a.logger == nil {
 		logger, err := a.initLogging(ctx)
 		if err != nil {
 			return fmt.Errorf("init logging: %v", err)
@@ -135,7 +135,7 @@ func (a *App) before(ctx *cli.Context) error {
 		a.logger = logger
 	}
 
-	if a.meta != nil {
+	if a.meta == nil {
 		err := a.checkMetaVersion()
 		if err != nil {
 			a.logger.Error("check meta version", zap.Error(err))
