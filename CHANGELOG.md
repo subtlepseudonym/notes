@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.1] -
+### Fixed
+- Logging correctly uses the shared state logger
+
 ## [1.2.0] -
 ### Added
 - Generate release candidate versions for \*-rc branches in build tag script
