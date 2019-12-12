@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/subtlepseudonym/notes"
-	dalpkg "github.com/subtlepseudonym/notes/dal"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -16,14 +15,12 @@ const (
 	defaultDateTitleLocation = "Local"
 )
 
-func buildNewCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+func (a *App) buildNewCommand() cli.Command {
 	return cli.Command{
 		Name:      "new",
 		ShortName: "n",
 		Usage:     "create a new note",
-		Action: func(ctx *cli.Context) error {
-			return newAction(ctx, dal, meta)
-		},
+		Action:    a.newAction,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "no-watch",
@@ -62,11 +59,11 @@ func buildNewCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 	}
 }
 
-func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
-	logger := zap.L().Named(ctx.Command.Name)
+func (a *App) newAction(ctx *cli.Context) error {
+	logger := a.logger.Named(ctx.Command.Name)
 
-	newNoteID := meta.LatestID + 1
-	_, exists := meta.Notes[newNoteID]
+	newNoteID := a.meta.LatestID + 1
+	_, exists := a.meta.Notes[newNoteID]
 	if exists {
 		return fmt.Errorf("note ID: must be unique")
 	}
@@ -86,9 +83,9 @@ func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 			Deleted: notes.JSONTime{time.Unix(0, 0)},
 		},
 	}
-	meta.LatestID = note.Meta.ID
+	a.meta.LatestID = note.Meta.ID
 
-	body, err := editNote(ctx, dal, meta, note)
+	body, err := a.editNote(ctx, note)
 	if err != nil {
 		return fmt.Errorf("user handoff: %w", err)
 	}
@@ -101,25 +98,25 @@ func newAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 		}
 	}
 
-	err = dal.SaveNote(note)
+	err = a.dal.SaveNote(note)
 	if err != nil {
 		// FIXME: persist the note somewhere if saving it fails
 		return fmt.Errorf("save note: %w", err)
 	}
 	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
-	metaSize, err := meta.ApproxSize()
+	metaSize, err := a.meta.ApproxSize()
 	if err != nil {
 		return fmt.Errorf("get meta size: %w", err)
 	}
 
-	meta.Size = metaSize
-	meta.Notes[note.Meta.ID] = note.Meta
-	err = dal.SaveMeta(meta)
+	a.meta.Size = metaSize
+	a.meta.Notes[note.Meta.ID] = note.Meta
+	err = a.dal.SaveMeta(a.meta)
 	if err != nil {
 		return fmt.Errorf("save meta: %w", err)
 	}
-	logger.Info("meta updated", zap.Int("metaSize", meta.Size))
+	logger.Info("meta updated", zap.Int("metaSize", a.meta.Size))
 
 	return nil
 }

@@ -5,21 +5,16 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/subtlepseudonym/notes"
-	dalpkg "github.com/subtlepseudonym/notes/dal"
-
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
 
-func buildRemoveCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+func (a *App) buildRemoveCommand() cli.Command {
 	return cli.Command{
 		Name:      "rm",
 		Usage:     "remove an existing note",
 		ArgsUsage: "<noteID>",
-		Action: func(ctx *cli.Context) error {
-			return rmAction(ctx, dal, meta)
-		},
+		Action:    a.rmAction,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "hard",
@@ -29,8 +24,8 @@ func buildRemoveCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 	}
 }
 
-func rmAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
-	logger := zap.L().Named(ctx.Command.Name)
+func (a *App) rmAction(ctx *cli.Context) error {
+	logger := a.logger.Named(ctx.Command.Name)
 
 	if !ctx.Args().Present() {
 		return fmt.Errorf("usage: noteID argument required")
@@ -41,30 +36,30 @@ func rmAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 	}
 	noteID := int(n)
 
-	note, err := dal.GetNote(noteID)
+	note, err := a.dal.GetNote(noteID)
 	if err != nil {
 		return fmt.Errorf("get note: %w", err)
 	}
 
 	if ctx.Bool("hard") {
-		err = dal.RemoveNote(noteID)
+		err = a.dal.RemoveNote(noteID)
 		if err != nil {
 			return fmt.Errorf("remove note file: %w", err)
 		}
 
-		delete(meta.Notes, note.Meta.ID)
+		delete(a.meta.Notes, note.Meta.ID)
 	} else {
 		note.Meta.Deleted.Time = time.Now()
-		err = dal.SaveNote(note)
+		err = a.dal.SaveNote(note)
 		if err != nil {
 			return fmt.Errorf("save note: %w", err)
 		}
 		logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
-		meta.Notes[note.Meta.ID] = note.Meta
+		a.meta.Notes[note.Meta.ID] = note.Meta
 	}
 
-	err = dal.SaveMeta(meta)
+	err = a.dal.SaveMeta(a.meta)
 	if err != nil {
 		return fmt.Errorf("save meta: %w", err)
 	}

@@ -7,33 +7,28 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/subtlepseudonym/notes"
-	dalpkg "github.com/subtlepseudonym/notes/dal"
-
 	"github.com/urfave/cli"
 )
 
-func buildDebugCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+func (a *App) buildDebugCommand() cli.Command {
 	return cli.Command{
 		Name:        "debug",
 		Usage:       "access debugging tools",
 		Description: "Access lower-level structures, implementation details, and other debugging utilities. The behavior of this command and its subcommands are subject to breaking changes across non-major releases",
 		Subcommands: []cli.Command{
-			buildGetNote(dal),
-			buildGetMeta(dal, meta),
+			a.buildGetNote(),
+			a.buildGetMeta(),
 		},
 	}
 }
 
-func buildGetNote(dal dalpkg.DAL) cli.Command {
+func (a *App) buildGetNote() cli.Command {
 	return cli.Command{
 		Name:        "get-note",
 		Usage:       "print note structure",
 		Description: "Print the contents of a note file as a json object",
 		ArgsUsage:   "<noteID>",
-		Action: func(ctx *cli.Context) error {
-			return getNoteAction(ctx, dal)
-		},
+		Action:      a.getNoteAction,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "no-body",
@@ -43,7 +38,7 @@ func buildGetNote(dal dalpkg.DAL) cli.Command {
 	}
 }
 
-func getNoteAction(ctx *cli.Context, dal dalpkg.DAL) error {
+func (a *App) getNoteAction(ctx *cli.Context) error {
 	if !ctx.Args().Present() {
 		return fmt.Errorf("usage: noteID argument required")
 	}
@@ -53,7 +48,7 @@ func getNoteAction(ctx *cli.Context, dal dalpkg.DAL) error {
 	}
 	noteID := int(n)
 
-	note, err := dal.GetNote(noteID)
+	note, err := a.dal.GetNote(noteID)
 	if err != nil {
 		return fmt.Errorf("get note: %w", err)
 	}
@@ -74,14 +69,12 @@ func getNoteAction(ctx *cli.Context, dal dalpkg.DAL) error {
 	return nil
 }
 
-func buildGetMeta(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+func (a *App) buildGetMeta() cli.Command {
 	return cli.Command{
 		Name:        "get-meta",
 		Usage:       "print meta structure",
 		Description: "Print the contents of the meta file as a json object",
-		Action: func(ctx *cli.Context) error {
-			return getMetaAction(ctx, dal, meta)
-		},
+		Action:      a.getMetaAction,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "in-memory",
@@ -91,10 +84,11 @@ func buildGetMeta(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 	}
 }
 
-func getMetaAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
+func (a *App) getMetaAction(ctx *cli.Context) error {
+	meta := a.meta
 	if !ctx.Bool("in-memory") {
 		var err error
-		meta, err = dal.GetMeta()
+		meta, err = a.dal.GetMeta()
 		if err != nil {
 			return fmt.Errorf("get meta from dal: %w", err)
 		}

@@ -8,32 +8,29 @@ import (
 	"unicode/utf8"
 
 	"github.com/subtlepseudonym/notes"
-	dalpkg "github.com/subtlepseudonym/notes/dal"
 
 	"github.com/urfave/cli"
 )
 
 const infoDelimiter = "|"
 
-func buildInfoCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+func (a *App) buildInfoCommand() cli.Command {
 	return cli.Command{
 		Name:        "info",
 		Usage:       "print info",
 		Description: "This command gets information about the app binary, the meta file, or specific note files and prints it in a human-friendly format. These are specified by providing no arguments, the \"meta\" argument, or a noteID respectively",
 		ArgsUsage:   "[meta | <noteID>]",
-		Action: func(ctx *cli.Context) error {
-			return infoAction(ctx, dal, meta)
-		},
+		Action:      a.infoAction,
 	}
 }
 
-func infoAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
+func (a *App) infoAction(ctx *cli.Context) error {
 	if !ctx.Args().Present() {
 		return printAppInfo(ctx)
 	}
 
 	if ctx.Args().First() == "meta" {
-		return printMetaInfo(ctx, meta)
+		return printMetaInfo(ctx, a.meta)
 	}
 
 	noteID, err := strconv.ParseInt(ctx.Args().First(), 16, 64)
@@ -41,12 +38,12 @@ func infoAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 		return fmt.Errorf("parse noteID argument: %w", err)
 	}
 
-	note, err := dal.GetNote(int(noteID))
+	note, err := a.dal.GetNote(int(noteID))
 	if err != nil {
 		return fmt.Errorf("get note file: %w", err)
 	}
 
-	return printNoteInfo(ctx, meta, note)
+	return printNoteInfo(ctx, a.meta, note)
 }
 
 func printRows(ctx *cli.Context, rows [][]string) {

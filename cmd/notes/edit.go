@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/subtlepseudonym/notes"
-	dalpkg "github.com/subtlepseudonym/notes/dal"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -16,16 +15,14 @@ const (
 	defaultLatestDepth = 5 // default number of IDs to search for latest note
 )
 
-func buildEditCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+func (a *App) buildEditCommand() cli.Command {
 	return cli.Command{
 		Name:        "edit",
 		ShortName:   "e",
 		Usage:       "edit an existing note",
 		Description: "Open a note for editing, as specified by the <noteID> argument. If no argument is provided, notes will open the most recently created note for editing",
 		ArgsUsage:   "[<noteID>]",
-		Action: func(ctx *cli.Context) error {
-			return editAction(ctx, dal, meta)
-		},
+		Action:      a.editAction,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "no-watch",
@@ -84,15 +81,15 @@ func getNoteID(meta *notes.Meta, arg string, searchDepth int) (int, error) {
 	return noteID, nil
 }
 
-func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
-	logger := zap.L().Named(ctx.Command.Name)
+func (a *App) editAction(ctx *cli.Context) error {
+	logger := a.logger.Named(ctx.Command.Name)
 
-	noteID, err := getNoteID(meta, ctx.Args().First(), ctx.Int("latest-depth"))
+	noteID, err := getNoteID(a.meta, ctx.Args().First(), ctx.Int("latest-depth"))
 	if err != nil {
 		return fmt.Errorf("get note ID: %w", err)
 	}
 
-	note, err := dal.GetNote(noteID)
+	note, err := a.dal.GetNote(noteID)
 	if err != nil {
 		return fmt.Errorf("get note: %w", err)
 	}
@@ -108,7 +105,7 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 		changed = true
 	}
 
-	body, err := editNote(ctx, dal, meta, note)
+	body, err := a.editNote(ctx, note)
 	if err != nil {
 		return fmt.Errorf("user handoff: %w", err)
 	}
@@ -129,24 +126,24 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 		}
 	}
 
-	err = dal.SaveNote(note)
+	err = a.dal.SaveNote(note)
 	if err != nil {
 		return fmt.Errorf("save note: %w", err)
 	}
 	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
-	metaSize, err := meta.ApproxSize()
+	metaSize, err := a.meta.ApproxSize()
 	if err != nil {
 		return fmt.Errorf("get meta size: %w", err)
 	}
 
-	meta.Size = metaSize
-	meta.Notes[note.Meta.ID] = note.Meta
-	err = dal.SaveMeta(meta)
+	a.meta.Size = metaSize
+	a.meta.Notes[note.Meta.ID] = note.Meta
+	err = a.dal.SaveMeta(a.meta)
 	if err != nil {
 		return fmt.Errorf("save meta: %w", err)
 	}
-	logger.Info("meta updated", zap.Int("metaSize", meta.Size))
+	logger.Info("meta updated", zap.Int("metaSize", a.meta.Size))
 
 	return nil
 }

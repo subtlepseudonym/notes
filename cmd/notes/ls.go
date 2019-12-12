@@ -6,9 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/subtlepseudonym/notes"
-	dalpkg "github.com/subtlepseudonym/notes/dal"
-
 	"github.com/urfave/cli"
 )
 
@@ -18,13 +15,11 @@ const (
 	defaultListColumnDelimiter = " | "
 )
 
-func buildListCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
+func (a *App) buildListCommand() cli.Command {
 	return cli.Command{
-		Name:  "ls",
-		Usage: "list note info",
-		Action: func(ctx *cli.Context) error {
-			return lsAction(ctx, dal, meta)
-		},
+		Name:   "ls",
+		Usage:  "list note info",
+		Action: a.lsAction,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "all, a",
@@ -62,23 +57,23 @@ func buildListCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 	}
 }
 
-func lsAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
+func (a *App) lsAction(ctx *cli.Context) error {
 	limit := defaultListSize
 	if ctx.Bool("all") {
-		limit = len(meta.Notes)
+		limit = len(a.meta.Notes)
 	} else if ctx.Int("num") != 0 {
 		limit = ctx.Int("num")
 	}
 
-	padAmount := int(math.Log(float64(len(meta.Notes)))/math.Log(16.0) + 1.0)
+	padAmount := int(math.Log(float64(len(a.meta.Notes)))/math.Log(16.0) + 1.0)
 	idFormat := fmt.Sprintf(" %%%dx", padAmount)
 
 	var listed int
-	idx := meta.LatestID
+	idx := a.meta.LatestID
 
 	var noteList []string
 	for listed < limit && idx >= 0 {
-		note, exists := meta.Notes[idx]
+		note, exists := a.meta.Notes[idx]
 		idx--
 		if !exists {
 			continue
