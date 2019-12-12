@@ -6,6 +6,7 @@
 - Loads of additional logging
 - Flag for writing / editing notes without appending to the note's edit history
 - Debug commands for accessing lower level functionality (debug)
+	- Going forward, the debug command and its subcommands will not be considered a part of the public API
 - Automatically update meta version (unless app version is a major release ahead)
 
 ### Changed
