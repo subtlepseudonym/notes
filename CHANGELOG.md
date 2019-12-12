@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.2] -
+### Changed
+- Background updater has more descriptive logging
+
 ## [1.2.1] -
 ### Fixed
 - Logging correctly uses the shared state logger
