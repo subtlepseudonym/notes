@@ -10,10 +10,20 @@ const defaultEditHistorySize = 16
 
 // Meta holds meta information for the local notes storage as a whole
 type Meta struct {
-	Version  string           `json:"version"`
-	LatestID int              `json:"latestId"`
-	Size     int              `json:"size"`  // meta file size in bytes
-	Notes    map[int]NoteMeta `json:"notes"` // maps note ID to NoteMeta
+	Version     string           `json:"version"`
+	OldVersions []string         `json:"oldVersions"`
+	LatestID    int              `json:"latestId"`
+	Size        int              `json:"size"`  // meta file size in bytes
+	Notes       map[int]NoteMeta `json:"notes"` // maps note ID to NoteMeta
+}
+
+// UpdateVersion replaces the existing version with the provided new version
+// and adds the old version to the list of old versions
+func (m *Meta) UpdateVersion(newVersion string) *Meta {
+	m.OldVersions = append(m.OldVersions, m.Version)
+	m.Version = newVersion
+
+	return m
 }
 
 // ApproxSize gets the approximate encoded size of the meta object by

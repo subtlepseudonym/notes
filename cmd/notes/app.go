@@ -135,6 +135,13 @@ func (a *App) before(ctx *cli.Context) error {
 		a.logger = logger
 	}
 
+	if a.meta != nil {
+		err := a.checkMetaVersion()
+		if err != nil {
+			a.logger.Error("check meta version", zap.Error(err))
+		}
+	}
+
 	return nil
 }
 
@@ -167,6 +174,43 @@ func (a *App) initLogging(ctx *cli.Context) (*zap.Logger, error) {
 	core := zapcore.NewCore(encoder, logFile, zapcore.Level(int8(logLevel)))
 
 	return zap.New(core).With(zap.String("version", a.Version)), nil
+}
+
+func (a *App) checkMetaVersion() error {
+	// TODO: this functionality is very likely to change when the update and
+	// upgrade commands are implemented
+	if a.meta == nil {
+		return fmt.Errorf("meta is nil")
+	}
+
+	appVersion, err := semver.NewVersion(a.Version)
+	if err != nil {
+		return fmt.Errorf("parse app version: %w", err)
+	}
+
+	metaVersion, err := semver.NewVersion(a.meta.Version)
+	if err != nil {
+		return fmt.Errorf("parse meta version: %w", err)
+	}
+
+	// automatically update meta if it's not a new major version
+	if appVersion.GreaterThan(metaVersion) && appVersion.Major() == metaVersion.Major() {
+		a.logger.Info("updating meta", zap.String("appVersion", a.Version), zap.String("metaVersion", a.meta.Version))
+
+		a.meta.UpdateVersion(appVersion.String())
+		size, err := a.meta.ApproxSize()
+		if err != nil {
+			return fmt.Errorf("approximate meta size: %v", err)
+		}
+
+		a.meta.Size = size
+		err = a.dal.SaveMeta(a.meta)
+		if err != nil {
+			return fmt.Errorf("update meta version: save meta: %v", err)
+		}
+	}
+
+	return nil
 }
 
 func (a *App) interactiveMode(ctx *cli.Context) error {
