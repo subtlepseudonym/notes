@@ -193,7 +193,7 @@ func (a *App) checkMetaVersion() error {
 
 	// automatically update meta if it's not a new major version
 	if appVersion.GreaterThan(metaVersion) && appVersion.Major() == metaVersion.Major() {
-		a.logger.Info("updating meta version", zap.String("appVersion", a.Version), zap.String("metaVersion", a.meta.Version))
+		a.logger.Info("updating meta version", zap.String("oldVersion", a.meta.Version))
 
 		a.meta = a.meta.UpdateVersion(appVersion.String())
 		size, err := a.meta.ApproxSize()
