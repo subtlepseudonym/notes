@@ -13,8 +13,8 @@ all: test build
 build: format
 	go build ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
 
-dev-build db: BUILDTAGS=debug
-dev-build db: format
+dev: BUILDTAGS=debug
+dev: format
 	go build -tags "${BUILDTAGS}" ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
 
 test:
