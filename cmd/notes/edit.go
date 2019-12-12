@@ -2,14 +2,12 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"strconv"
 	"time"
 
 	"github.com/subtlepseudonym/notes"
 	dalpkg "github.com/subtlepseudonym/notes/dal"
 
-	"github.com/pkg/errors"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )
@@ -33,6 +31,10 @@ func buildEditCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 				Name:  "no-watch",
 				Usage: "don't save note in background",
 			},
+			cli.BoolFlag{
+				Name:  "no-history",
+				Usage: "don't record activity in edit history",
+			},
 			cli.StringFlag{
 				Name:  "title, t",
 				Usage: "note title",
@@ -41,7 +43,7 @@ func buildEditCommand(dal dalpkg.DAL, meta *notes.Meta) cli.Command {
 				Name:   "editor",
 				Usage:  "text editor command",
 				Value:  defaultEditor,
-				EnvVar: "EDTIOR",
+				EnvVar: "EDITOR",
 			},
 			cli.IntFlag{
 				Name:  "latest-depth",
@@ -62,7 +64,7 @@ func getNoteID(meta *notes.Meta, arg string, searchDepth int) (int, error) {
 	if arg != "" {
 		noteID64, err := strconv.ParseInt(arg, 16, 64)
 		if err != nil {
-			return 0, errors.Wrap(err, "parse base 16 noteID argument failed")
+			return 0, fmt.Errorf("parse noteID argument: %w", err)
 		}
 		noteID = int(noteID64)
 	} else {
@@ -82,41 +84,17 @@ func getNoteID(meta *notes.Meta, arg string, searchDepth int) (int, error) {
 	return noteID, nil
 }
 
-func editNote(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta, note *notes.Note) (string, error) {
-	file, err := ioutil.TempFile("", "note")
-	if err != nil {
-		return "", errors.Wrap(err, "create temp file failed")
-	}
-	defer file.Close()
-
-	stop := make(chan struct{})
-	if !ctx.Bool("no-watch") {
-		go func() {
-			err := dalpkg.WatchAndUpdate(dal, meta, note, file.Name(), ctx.Duration("update-period"), stop, Logger)
-			if err != nil {
-				Logger.Error("watch and updated failed", zap.Error(err), zap.Int("noteID", note.Meta.ID), zap.String("filename", file.Name()))
-			}
-		}()
-	}
-
-	body, err := notes.GetNoteBodyFromUser(file, ctx.String("editor"), note.Body)
-	if err != nil {
-		return "", errors.Wrap(err, "get note body from user failed")
-	}
-	close(stop)
-
-	return body, nil
-}
-
 func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
+	logger := zap.L().Named(ctx.Command.Name)
+
 	noteID, err := getNoteID(meta, ctx.Args().First(), ctx.Int("latest-depth"))
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get note ID failed"), 1)
+		return fmt.Errorf("get note ID: %w", err)
 	}
 
 	note, err := dal.GetNote(noteID)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get note failed"), 1)
+		return fmt.Errorf("get note: %w", err)
 	}
 
 	var changed bool
@@ -132,7 +110,7 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 
 	body, err := editNote(ctx, dal, meta, note)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "user handoff failed"), 1)
+		return fmt.Errorf("user handoff: %w", err)
 	}
 
 	if note.Body != body {
@@ -144,28 +122,31 @@ func editAction(ctx *cli.Context, dal dalpkg.DAL, meta *notes.Meta) error {
 		return nil
 	}
 
-	// TODO: add option to not append edit to history
-	note, err = note.AppendEdit(time.Now())
-	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "append edit to note history failed"), 1)
+	if !ctx.Bool("no-history") {
+		note, err = note.AppendEdit(time.Now())
+		if err != nil {
+			return fmt.Errorf("append edit to note history: %w", err)
+		}
 	}
 
 	err = dal.SaveNote(note)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "save note failed"), 1)
+		return fmt.Errorf("save note: %w", err)
 	}
+	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
 	metaSize, err := meta.ApproxSize()
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "get meta size failed"), 1)
+		return fmt.Errorf("get meta size: %w", err)
 	}
 
 	meta.Size = metaSize
 	meta.Notes[note.Meta.ID] = note.Meta
 	err = dal.SaveMeta(meta)
 	if err != nil {
-		return cli.NewExitError(errors.Wrap(err, "save meta failed"), 1)
+		return fmt.Errorf("save meta: %w", err)
 	}
+	logger.Info("meta updated", zap.Int("metaSize", meta.Size))
 
 	return nil
 }

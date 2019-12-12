@@ -1,3 +1,5 @@
+// Deprecated: log has been replaced by an in-place definition in the main
+// package and should not be used. It will be removed is notes/v2
 package log
 
 import (

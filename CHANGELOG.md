@@ -1,7 +1,29 @@
 # Changelog
 
+## [1.2.0] -
+### Added
+- Generate release candidate versions for \*-rc branches in build tag script
+- Loads of additional logging
+- Flag for writing / editing notes without appending to the note's edit history
+- Debug commands for accessing lower level functionality (debug)
+	- Going forward, the debug command and its subcommands will not be considered a part of the public API
+- Automatically update meta version (unless app version is a major release ahead)
+
+### Changed
+- Use zap logging
+- Include main package version in logs
+- Upgrade to go1.13 error wrapping
+- List build tags in app info if any are present
+- Generate version / build tag with a go utility rather than a script
+- Deprecated notes/log package
+
+### Fixed
+- Handle errors more gracefully in interactive mode
+- Initialize logger / home directory value once
+- Stop using package global logger
+
 ## [1.1.2] - 2019-11-14
-### Change
+### Changed
 - Updated to go1.13
 
 ## [1.1.1] - 2019-07-02
@@ -16,7 +38,7 @@
 - History for interactive mode
 
 ### Changed
-- Make command help text more helpful (and the format was standardized)
+- Make command help text more helpful (and standardize format)
 - Improve `edit` command's ability to find the latest note when no ID is provided
 - Provide more descriptive build tag in semantic version
 - Trim exit command in interactive mode

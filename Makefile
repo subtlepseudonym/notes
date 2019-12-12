@@ -1,14 +1,21 @@
 BINARY=notes
 
-BUILD=$$(bash build-tag.sh)
+BUILD=$$(vtag)
 
 REVISION=`git rev-list -n1 HEAD`
-LDFLAGS=--ldflags "-X main.Version=${BUILD} -X main.Revision=${REVISION}"
+BUILDTAGS=
+LDFLAGS=--ldflags "-X main.Version=${BUILD} -X main.Revision=${REVISION} -X \"main.BuildTags=${BUILDTAGS}\""
+
+default: all
 
 all: test build
 
 build: format
 	go build ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
+
+dev-build: BUILDTAGS=debug
+dev-build: format
+	go build -tags "${BUILDTAGS}" ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
 
 test:
 	gotest --race -v ./...
@@ -26,3 +33,5 @@ clean:
 
 get-tag:
 	echo ${BUILD}
+
+.PHONY: all build dev-build test test-all format fmt clean get-tag
