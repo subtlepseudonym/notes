@@ -31,7 +31,7 @@ func (a *App) editNote(ctx *cli.Context, note *notes.Note) (string, error) {
 	stop := make(chan struct{})
 	if !ctx.Bool("no-watch") {
 		go func() {
-			err := a.watchAndUpdate(ctx, note, file.Name(), ctx.Duration("update-period"), stop)
+			err := a.watchAndUpdate(ctx, note, file.Name(), ctx.Duration("update-period"), stop, a.logger)
 			if err != nil {
 				a.logger.Error("watch and update failed", zap.Error(err), zap.Int("noteID", note.Meta.ID), zap.String("filename", file.Name()))
 			}
@@ -50,8 +50,8 @@ func (a *App) editNote(ctx *cli.Context, note *notes.Note) (string, error) {
 // watchAndUpdate periodically reads the contents of the provided file and compares
 // it to the body of the provided note. If they aren't equal, it saves the changes
 // to the DAL
-func (a *App) watchAndUpdate(ctx *cli.Context, note *notes.Note, filename string, period time.Duration, stop chan struct{}) error {
-	logger := a.logger.Named("watch")
+func (a *App) watchAndUpdate(ctx *cli.Context, note *notes.Note, filename string, period time.Duration, stop chan struct{}, l *zap.Logger) error {
+	logger := l.Named("watch")
 
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
