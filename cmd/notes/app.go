@@ -95,12 +95,12 @@ func New() (*App, error) {
 	}
 
 	app.Commands = []cli.Command{
-		buildDebugCommand(dal, meta),
-		buildListCommand(dal, meta),
-		buildNewCommand(dal, meta),
-		buildRemoveCommand(dal, meta),
-		buildEditCommand(dal, meta),
-		buildInfoCommand(dal, meta),
+		buildDebugCommand(app.dal, app.meta),
+		buildListCommand(app.dal, app.meta),
+		buildNewCommand(app.dal, app.meta),
+		buildRemoveCommand(app.dal, app.meta),
+		buildEditCommand(app.dal, app.meta),
+		buildInfoCommand(app.dal, app.meta),
 	}
 
 	app.CommandNotFound = func(ctx *cli.Context, cmd string) {
