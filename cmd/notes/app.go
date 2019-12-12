@@ -135,11 +135,9 @@ func (a *App) before(ctx *cli.Context) error {
 		a.logger = logger
 	}
 
-	if a.meta == nil {
-		err := a.checkMetaVersion()
-		if err != nil {
-			a.logger.Error("check meta version", zap.Error(err))
-		}
+	err := a.checkMetaVersion()
+	if err != nil {
+		a.logger.Error("check meta version", zap.Error(err))
 	}
 
 	return nil
@@ -195,9 +193,9 @@ func (a *App) checkMetaVersion() error {
 
 	// automatically update meta if it's not a new major version
 	if appVersion.GreaterThan(metaVersion) && appVersion.Major() == metaVersion.Major() {
-		a.logger.Info("updating meta", zap.String("appVersion", a.Version), zap.String("metaVersion", a.meta.Version))
+		a.logger.Info("updating meta version", zap.String("appVersion", a.Version), zap.String("metaVersion", a.meta.Version))
 
-		a.meta.UpdateVersion(appVersion.String())
+		a.meta = a.meta.UpdateVersion(appVersion.String())
 		size, err := a.meta.ApproxSize()
 		if err != nil {
 			return fmt.Errorf("approximate meta size: %v", err)
