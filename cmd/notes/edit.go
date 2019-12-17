@@ -105,7 +105,7 @@ func (a *App) editAction(ctx *cli.Context) error {
 		changed = true
 	}
 
-	body, err := a.editNote(ctx, note)
+	body, err := a.editNote(ctx, note, logger)
 	if err != nil {
 		return fmt.Errorf("user handoff: %w", err)
 	}

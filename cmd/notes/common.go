@@ -21,7 +21,7 @@ const (
 
 // editNote is a helper function for turning control over to the user and getting
 // a new note body from them
-func (a *App) editNote(ctx *cli.Context, note *notes.Note) (string, error) {
+func (a *App) editNote(ctx *cli.Context, note *notes.Note, logger *zap.Logger) (string, error) {
 	file, err := ioutil.TempFile("", "note")
 	if err != nil {
 		return "", fmt.Errorf("create temporary file: %w", err)
@@ -31,7 +31,7 @@ func (a *App) editNote(ctx *cli.Context, note *notes.Note) (string, error) {
 	stop := make(chan struct{})
 	if !ctx.Bool("no-watch") {
 		go func() {
-			err := a.watchAndUpdate(ctx, note, file.Name(), ctx.Duration("update-period"), stop, a.logger)
+			err := a.watchAndUpdate(ctx, note, file.Name(), ctx.Duration("update-period"), stop, logger)
 			if err != nil {
 				a.logger.Error("watch and update failed", zap.Error(err), zap.Int("noteID", note.Meta.ID), zap.String("filename", file.Name()))
 			}

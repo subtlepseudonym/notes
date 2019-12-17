@@ -85,7 +85,7 @@ func (a *App) newAction(ctx *cli.Context) error {
 	}
 	a.meta.LatestID = note.Meta.ID
 
-	body, err := a.editNote(ctx, note)
+	body, err := a.editNote(ctx, note, logger)
 	if err != nil {
 		return fmt.Errorf("user handoff: %w", err)
 	}
