@@ -1,4 +1,4 @@
-package dalpkg
+package dal
 
 import (
 	"path"
