@@ -22,7 +22,11 @@ type node struct {
 	note *notes.Note
 }
 
-func NewLRU(d dal.DAL, capacity int) lru {
+func NewLeastRecentlyUsed(d dal.DAL, capacity int) NoteCache {
+	return NewLRU(d, capacity)
+}
+
+func NewLRU(d dal.DAL, capacity int) NoteCache {
 	return lru{
 		DAL: d,
 		capacity: capacity,

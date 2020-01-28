@@ -16,7 +16,11 @@ type rr struct {
 	cache map[int]*notes.Note
 }
 
-func NewRR(d dal.DAL, capacity int) rr {
+func NewRandomReplacement(d dal.DAL, capacity int) NoteCache {
+	return NewRR(d, capacity)
+}
+
+func NewRR(d dal.DAL, capacity int) NoteCache {
 	return rr{
 		DAL: d,
 		capacity: capacity,

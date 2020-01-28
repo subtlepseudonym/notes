@@ -19,9 +19,9 @@ type NoteCache interface {
 func WithNoteCache(d dal.DAL, cacheType CacheType, capacity int) NoteCache {
 	switch cacheType {
 	case LRU:
-		return NewLRU(d, capacity)
+		return NewLeastRecentlyUsed(d, capacity)
 	case RR:
-		return NewRR(d, capacity)
+		return NewRandomReplacement(d, capacity)
 	default:
 		return NewNoop(d)
 	}
