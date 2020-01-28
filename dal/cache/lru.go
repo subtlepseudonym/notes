@@ -7,6 +7,7 @@ import (
 	"github.com/subtlepseudonym/notes/dal"
 )
 
+// lru utilizes a least-recently-used cache replacement policy
 type lru struct {
 	dal.DAL
 	capacity int
