@@ -7,7 +7,8 @@ import (
 type CacheType int
 const (
 	Noop CacheType = iota
-	LRU
+	LRU // least recently used
+	RR  // random replacement
 )
 
 type NoteCache interface {
@@ -19,6 +20,8 @@ func WithNoteCache(d dal.DAL, cacheType CacheType, capacity int) NoteCache {
 	switch cacheType {
 	case LRU:
 		return NewLRU(d, capacity)
+	case RR:
+		return NewRR(d, capacity)
 	default:
 		return NewNoop(d)
 	}
