@@ -17,7 +17,7 @@ type NoteCache interface {
 	Flush() error
 }
 
-func WithNoteCache(d dal.DAL, cacheType CacheType, capacity int) NoteCache {
+func NewNoteCache(d dal.DAL, cacheType CacheType, capacity int) NoteCache {
 	switch cacheType {
 	case LRU:
 		return NewLeastRecentlyUsed(d, capacity)
