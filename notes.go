@@ -6,15 +6,27 @@ import (
 	"time"
 )
 
-const defaultEditHistorySize = 16
+const (
+	defaultEditHistorySize = 16
+	defaultIndexCapacity   = 256
+)
+
+type Index map[int]NoteMeta
+
+func NewIndex(capacity int) Index {
+	if capacity > 0 {
+		return Index(make(map[int]NoteMeta, capacity))
+	}
+
+	return Index(make(map[int]NoteMeta, defaultIndexCapacity))
+}
 
 // Meta holds meta information for the local notes storage as a whole
 type Meta struct {
-	Version     string           `json:"version"`
-	OldVersions []string         `json:"oldVersions"`
-	LatestID    int              `json:"latestId"`
-	Size        int              `json:"size"`  // meta file size in bytes
-	Notes       map[int]NoteMeta `json:"notes"` // maps note ID to NoteMeta
+	Version     string   `json:"version"`
+	OldVersions []string `json:"oldVersions"`
+	LatestID    int      `json:"latestId"`
+	Size        int      `json:"size"` // meta file size in bytes
 }
 
 // UpdateVersion replaces the existing version with the provided new version
