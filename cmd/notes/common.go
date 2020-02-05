@@ -87,8 +87,13 @@ func (a *App) watchAndUpdate(ctx *cli.Context, note *notes.Note, filename string
 				return fmt.Errorf("get meta size: %w", err)
 			}
 
+			a.index[note.Meta.ID] = note.Meta
+			err = a.dal.SaveIndex(a.index)
+			if err != nil {
+				return fmt.Errorf("save index: %w", err)
+			}
+
 			a.meta.Size = metaSize
-			a.meta.Notes[note.Meta.ID] = note.Meta
 			err = a.dal.SaveMeta(a.meta)
 			if err != nil {
 				return fmt.Errorf("save meta: %w", err)

@@ -41,6 +41,7 @@ type App struct {
 	logger  *zap.Logger
 	dal     dalpkg.DAL
 	meta    *notes.Meta
+	index   notes.Index
 
 	inInteractive bool
 }
@@ -75,6 +76,12 @@ func New() (*App, error) {
 		return nil, fmt.Errorf("initialize dal: %v", err)
 	}
 	app.dal = dal
+
+	index, err := dal.GetIndex()
+	if err != nil {
+		return nil, fmt.Errorf("get index: %v", err)
+	}
+	app.index = index
 
 	meta, err := dal.GetMeta()
 	if err != nil {
