@@ -11,9 +11,9 @@ import (
 type lru struct {
 	dal.DAL
 	capacity int
-	index map[int]*node // map noteID to linked list pointer
-	front *node
-	rear *node
+	index    map[int]*node // map noteID to linked list pointer
+	front    *node
+	rear     *node
 }
 
 type node struct {
@@ -28,9 +28,9 @@ func NewLeastRecentlyUsed(d dal.DAL, capacity int) NoteCache {
 
 func NewLRU(d dal.DAL, capacity int) NoteCache {
 	return lru{
-		DAL: d,
+		DAL:      d,
 		capacity: capacity,
-		index: make(map[int]*node, capacity),
+		index:    make(map[int]*node, capacity),
 	}
 }
 
@@ -98,7 +98,7 @@ func (l lru) add(n *node) {
 	l.front = n
 	l.index[n.note.Meta.ID] = n
 
-	if len(l.index) + 1 > l.capacity {
+	if len(l.index)+1 > l.capacity {
 		l.removeOldest()
 	}
 }

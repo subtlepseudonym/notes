@@ -5,10 +5,11 @@ import (
 )
 
 type CacheType int
+
 const (
 	Noop CacheType = iota
-	LRU // least recently used
-	RR  // random replacement
+	LRU            // least recently used
+	RR             // random replacement
 )
 
 type NoteCache interface {

@@ -12,8 +12,8 @@ import (
 type rr struct {
 	dal.DAL
 	capacity int
-	index []int
-	cache map[int]*notes.Note
+	index    []int
+	cache    map[int]*notes.Note
 }
 
 func NewRandomReplacement(d dal.DAL, capacity int) NoteCache {
@@ -22,10 +22,10 @@ func NewRandomReplacement(d dal.DAL, capacity int) NoteCache {
 
 func NewRR(d dal.DAL, capacity int) NoteCache {
 	return rr{
-		DAL: d,
+		DAL:      d,
 		capacity: capacity,
-		index: make([]int, 0, capacity),
-		cache: make(map[int]*notes.Note, capacity),
+		index:    make([]int, 0, capacity),
+		cache:    make(map[int]*notes.Note, capacity),
 	}
 }
 
