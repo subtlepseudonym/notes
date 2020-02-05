@@ -56,7 +56,7 @@ func (a *App) buildEditCommand() cli.Command {
 	}
 }
 
-func getNoteID(meta *notes.Meta, arg string, searchDepth int) (int, error) {
+func getNoteID(meta *notes.Meta, index notes.Index, arg string, searchDepth int) (int, error) {
 	var noteID int
 	if arg != "" {
 		noteID64, err := strconv.ParseInt(arg, 16, 64)
@@ -66,7 +66,7 @@ func getNoteID(meta *notes.Meta, arg string, searchDepth int) (int, error) {
 		noteID = int(noteID64)
 	} else {
 		for i := 0; i < searchDepth; i++ {
-			if _, exists := meta.Notes[meta.LatestID-i]; exists {
+			if _, exists := index[meta.LatestID-i]; exists {
 				noteID = meta.LatestID - i
 				break
 			}
@@ -84,7 +84,7 @@ func getNoteID(meta *notes.Meta, arg string, searchDepth int) (int, error) {
 func (a *App) editAction(ctx *cli.Context) error {
 	logger := a.logger.Named(ctx.Command.Name)
 
-	noteID, err := getNoteID(a.meta, ctx.Args().First(), ctx.Int("latest-depth"))
+	noteID, err := getNoteID(a.meta, a.index, ctx.Args().First(), ctx.Int("latest-depth"))
 	if err != nil {
 		return fmt.Errorf("get note ID: %w", err)
 	}
@@ -137,8 +137,13 @@ func (a *App) editAction(ctx *cli.Context) error {
 		return fmt.Errorf("get meta size: %w", err)
 	}
 
+	a.index[note.Meta.ID] = note.Meta
+	err = a.dal.SaveIndex(a.index)
+	if err != nil {
+		return fmt.Errorf("save index: %w", err)
+	}
+
 	a.meta.Size = metaSize
-	a.meta.Notes[note.Meta.ID] = note.Meta
 	err = a.dal.SaveMeta(a.meta)
 	if err != nil {
 		return fmt.Errorf("save meta: %w", err)

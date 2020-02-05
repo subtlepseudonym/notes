@@ -7,7 +7,6 @@ require (
 	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/go-test/deep v1.0.1
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
-	github.com/mitchellh/go-homedir v1.0.0
 	github.com/pkg/errors v0.8.0 // indirect
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/urfave/cli v1.20.1-0.20190203184040-693af58b4d51

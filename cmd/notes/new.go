@@ -63,7 +63,7 @@ func (a *App) newAction(ctx *cli.Context) error {
 	logger := a.logger.Named(ctx.Command.Name)
 
 	newNoteID := a.meta.LatestID + 1
-	_, exists := a.meta.Notes[newNoteID]
+	_, exists := a.index[newNoteID]
 	if exists {
 		return fmt.Errorf("note ID: must be unique")
 	}
@@ -110,8 +110,13 @@ func (a *App) newAction(ctx *cli.Context) error {
 		return fmt.Errorf("get meta size: %w", err)
 	}
 
+	a.index[note.Meta.ID] = note.Meta
+	err = a.dal.SaveIndex(a.index)
+	if err != nil {
+		return fmt.Errorf("save index: %w", err)
+	}
+
 	a.meta.Size = metaSize
-	a.meta.Notes[note.Meta.ID] = note.Meta
 	err = a.dal.SaveMeta(a.meta)
 	if err != nil {
 		return fmt.Errorf("save meta: %w", err)

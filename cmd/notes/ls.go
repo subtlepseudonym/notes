@@ -58,14 +58,11 @@ func (a *App) buildListCommand() cli.Command {
 }
 
 func (a *App) lsAction(ctx *cli.Context) error {
-	limit := defaultListSize
-	if ctx.Bool("all") {
-		limit = len(a.meta.Notes)
-	} else if ctx.Int("num") != 0 {
-		limit = ctx.Int("num")
+	limit := ctx.Int("num")
+	if ctx.Bool("all") || len(a.index) < limit {
+		limit = len(a.index)
 	}
-
-	padAmount := int(math.Log(float64(len(a.meta.Notes)))/math.Log(16.0) + 1.0)
+	padAmount := int(math.Log(float64(len(a.index)))/math.Log(16.0) + 1.0)
 	idFormat := fmt.Sprintf(" %%%dx", padAmount)
 
 	var listed int
@@ -73,7 +70,7 @@ func (a *App) lsAction(ctx *cli.Context) error {
 
 	var noteList []string
 	for listed < limit && idx >= 0 {
-		note, exists := a.meta.Notes[idx]
+		note, exists := a.index[idx]
 		idx--
 		if !exists {
 			continue

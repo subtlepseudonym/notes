@@ -4,18 +4,20 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/subtlepseudonym/notes"
 	dalpkg "github.com/subtlepseudonym/notes/dal"
+	"github.com/subtlepseudonym/notes/dal/cache"
 
 	"github.com/Masterminds/semver"
 	"github.com/chzyer/readline"
 	"github.com/kballard/go-shellquote"
-	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -32,15 +34,19 @@ const (
 	defaultNotesDirectory  = ".notes"
 	defaultHistoryFilePath = ".nts_history"
 	defaultLogFilePath     = ".nts_log"
+	defaultCacheCapacity   = 16
 )
 
 type App struct {
 	*cli.App
 
-	homeDir string
-	logger  *zap.Logger
-	dal     dalpkg.DAL
-	meta    *notes.Meta
+	homeDir   string
+	setupOnce sync.Once
+
+	logger *zap.Logger
+	dal    dalpkg.DAL
+	meta   *notes.Meta
+	index  notes.Index
 
 	inInteractive bool
 }
@@ -70,18 +76,6 @@ func New() (*App, error) {
 		return extraInfo
 	}
 
-	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: option to use different dal
-	if err != nil {
-		return nil, fmt.Errorf("initialize dal: %v", err)
-	}
-	app.dal = dal
-
-	meta, err := dal.GetMeta()
-	if err != nil {
-		return nil, fmt.Errorf("get meta: %v", err)
-	}
-	app.meta = meta
-
 	app.Flags = []cli.Flag{
 		cli.BoolFlag{
 			Name:  "silent",
@@ -91,6 +85,15 @@ func New() (*App, error) {
 			Name:  "verbosity",
 			Usage: "Set the logging level",
 			Value: int(zapcore.InfoLevel),
+		},
+		cli.UintFlag{
+			Name:  "cache-capacity",
+			Usage: "Cache capacity",
+			Value: defaultCacheCapacity,
+		},
+		cli.StringFlag{
+			Name:  "cache",
+			Usage: "Cache note state with `CACHE_TYPE`. Only useful with large note sets in interactive mode",
 		},
 	}
 
@@ -118,24 +121,63 @@ func New() (*App, error) {
 	return app, nil
 }
 
+func (a *App) setup(ctx *cli.Context) error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("get home directory: %w", err)
+	}
+	a.homeDir = home
+
+	logger, err := a.initLogging(ctx)
+	if err != nil {
+		return fmt.Errorf("init logging: %v", err)
+	}
+	a.logger = logger
+
+	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: option to use different dal
+	if err != nil {
+		return fmt.Errorf("initialize dal: %v", err)
+	}
+
+	if ctx.Int("cache-capacity") == 0 {
+		return fmt.Errorf("cache capacity must be non-zero")
+	}
+
+	switch strings.ToLower(ctx.String("cache")) {
+	case "lru", "least-recently-used":
+		a.dal = cache.NewNoteCache(dal, cache.LRU, ctx.Int("capacity"))
+	case "rr", "random-replacement":
+		a.dal = cache.NewNoteCache(dal, cache.RR, ctx.Int("capacity"))
+	default:
+		a.dal = dal
+	}
+
+	index, err := dal.GetIndex()
+	if err != nil {
+		return fmt.Errorf("get index: %v", err)
+	}
+	a.index = index
+
+	meta, err := dal.GetMeta()
+	if err != nil {
+		return fmt.Errorf("get meta: %v", err)
+	}
+	a.meta = meta
+
+	return nil
+}
+
 func (a *App) before(ctx *cli.Context) error {
-	if a.homeDir == "" {
-		home, err := homedir.Dir()
-		if err != nil {
-			return fmt.Errorf("get home directory: %w", err)
-		}
-		a.homeDir = home
+	var err error
+	a.setupOnce.Do(func() {
+		err = a.setup(ctx)
+	})
+	if err != nil {
+		ctx.App.Writer = ioutil.Discard // prevent help text and double err printing
+		return err
 	}
 
-	if a.logger == nil {
-		logger, err := a.initLogging(ctx)
-		if err != nil {
-			return fmt.Errorf("init logging: %v", err)
-		}
-		a.logger = logger
-	}
-
-	err := a.checkMetaVersion()
+	err = a.checkMetaVersion()
 	if err != nil {
 		a.logger.Error("check meta version", zap.Error(err))
 	}
