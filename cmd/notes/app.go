@@ -15,7 +15,6 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/chzyer/readline"
 	"github.com/kballard/go-shellquote"
-	"github.com/mitchellh/go-homedir"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -127,7 +126,7 @@ func New() (*App, error) {
 
 func (a *App) before(ctx *cli.Context) error {
 	if a.homeDir == "" {
-		home, err := homedir.Dir()
+		home, err := os.UserHomeDir()
 		if err != nil {
 			return fmt.Errorf("get home directory: %w", err)
 		}

@@ -1,11 +1,11 @@
 package dal
 
 import (
+	"os"
 	"path"
 	"testing"
 
 	"github.com/go-test/deep"
-	"github.com/mitchellh/go-homedir"
 )
 
 func TestNewLocalDAL(t *testing.T) {
@@ -16,7 +16,7 @@ func TestNewLocalDAL(t *testing.T) {
 		t.Error(err)
 	}
 
-	home, err := homedir.Dir()
+	home, err := os.UserHomeDir()
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

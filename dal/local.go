@@ -10,8 +10,6 @@ import (
 	"sync"
 
 	"github.com/subtlepseudonym/notes"
-
-	"github.com/mitchellh/go-homedir"
 )
 
 const (
@@ -32,7 +30,7 @@ type local struct {
 
 // NewLocalDAL initializes a DAL with the default options
 func NewLocalDAL(dirName, version string) (DAL, error) {
-	home, err := homedir.Dir()
+	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("get home directory: %v", err)
 	}
