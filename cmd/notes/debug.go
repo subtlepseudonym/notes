@@ -185,12 +185,7 @@ func (a *App) rebuildIndexAction(ctx *cli.Context) error {
 		}
 	}
 
-	indexCapacity := ctx.Int("capacity")
-	if indexCapacity < 0 {
-		return fmt.Errorf("index capacity cannot be less than zero")
-	}
-
-	index := notes.NewIndex(indexCapacity)
+	index := notes.NewIndex(ctx.Int("capacity"))
 	infos, err := ioutil.ReadDir(notesDir)
 	if err != nil {
 		return fmt.Errorf("read notes directory: %w", err)
