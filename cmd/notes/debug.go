@@ -16,17 +16,17 @@ func (a *App) buildDebugCommand() cli.Command {
 		Usage:       "access debugging tools",
 		Description: "Access lower-level structures, implementation details, and other debugging utilities. The behavior of this command and its subcommands are subject to breaking changes across non-major releases",
 		Subcommands: []cli.Command{
-			a.buildGetNote(),
-			a.buildGetMeta(),
+			debugGetNote(),
+			debugGetMeta(),
 		},
 	}
 }
 
-func (a *App) buildGetNote() cli.Command {
+func debugGetNote() cli.Command {
 	return cli.Command{
 		Name:        "get-note",
 		Usage:       "print note structure",
-		Description: "Print the contents of a note file as a json object",
+		Description: "Print the contents of a note as a json object",
 		ArgsUsage:   "<noteID>",
 		Action:      a.getNoteAction,
 		Flags: []cli.Flag{
@@ -62,18 +62,18 @@ func (a *App) getNoteAction(ctx *cli.Context) error {
 		return fmt.Errorf("marshal note: %w", err)
 	}
 
-	_, err = fmt.Fprintln(ctx.App.Writer, string(b))
+	_, err = ctx.App.Writer.Write(b)
 	if err != nil {
 		return fmt.Errorf("write to app writer: %w", err)
 	}
 	return nil
 }
 
-func (a *App) buildGetMeta() cli.Command {
+func debugGetMeta() cli.Command {
 	return cli.Command{
 		Name:        "get-meta",
 		Usage:       "print meta structure",
-		Description: "Print the contents of the meta file as a json object",
+		Description: "Print the contents of the meta as a json object",
 		Action:      a.getMetaAction,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
@@ -96,10 +96,10 @@ func (a *App) getMetaAction(ctx *cli.Context) error {
 
 	b, err := json.Marshal(meta)
 	if err != nil {
-		return fmt.Errorf("marshal note: %w", err)
+		return fmt.Errorf("marshal meta: %w", err)
 	}
 
-	_, err = fmt.Fprintln(ctx.App.Writer, string(b))
+	_, err = ctx.App.Writer.Write(b)
 	if err != nil {
 		return fmt.Errorf("write to app writer: %w", err)
 	}
