@@ -52,13 +52,6 @@ func (d *local) buildNewIndex() (notes.Index, error) {
 		}
 	}
 
-	indexPath := path.Join(d.notesDirectoryPath, d.indexFilename)
-	indexFile, err := os.Create(indexPath)
-	if err != nil {
-		return nil, fmt.Errorf("create index file: %v", err)
-	}
-	defer indexFile.Close()
-
 	index := notes.NewIndex(0) // use default capacity
 	infos, err := ioutil.ReadDir(d.notesDirectoryPath)
 	if err != nil {
@@ -82,14 +75,23 @@ func (d *local) buildNewIndex() (notes.Index, error) {
 		err = json.NewDecoder(noteFile).Decode(&note)
 		if err != nil {
 			// TODO: log this
+			noteFile.Close()
 			continue
 		}
 
 		index[note.Meta.ID] = note.Meta
+		noteFile.Close()
+	}
+
+	indexPath := path.Join(d.notesDirectoryPath, d.indexFilename)
+	indexFile, err := os.Create(indexPath)
+	if err != nil {
+		return nil, fmt.Errorf("create index file: %v", err)
 	}
 
 	err = json.NewEncoder(indexFile).Encode(index)
 	if err != nil {
+		indexFile.Close()
 		return nil, fmt.Errorf("encode index file: %v", err)
 	}
 
@@ -109,11 +111,11 @@ func (d *local) GetIndex() (notes.Index, error) {
 	if err != nil {
 		return d.buildNewIndex()
 	}
-	defer indexFile.Close()
 
 	var index notes.Index
 	err = json.NewDecoder(indexFile).Decode(&index)
 	if err != nil {
+		indexFile.Close()
 		return nil, fmt.Errorf("decode index file: %v", err)
 	}
 
@@ -131,7 +133,7 @@ func (d *local) SaveIndex(index notes.Index) error {
 	indexPath := path.Join(d.notesDirectoryPath, d.indexFilename)
 	err := os.Rename(indexPath, indexPath+".bak")
 	if err != nil {
-		return fmt.Errorf("backup old index file: %v", err)
+		return fmt.Errorf("backup index file: %v", err)
 	}
 	// TODO: remove index backup
 
@@ -142,10 +144,10 @@ func (d *local) SaveIndex(index notes.Index) error {
 			return fmt.Errorf("restore index backup: %v", err)
 		}
 	}
-	defer indexFile.Close()
 
 	err = json.NewEncoder(indexFile).Encode(index)
 	if err != nil {
+		indexFile.Close()
 		return fmt.Errorf("encode index file: %v", err)
 	}
 
@@ -164,19 +166,19 @@ func (d *local) buildNewMeta() (*notes.Meta, error) {
 		}
 	}
 
+	m := &notes.Meta{
+		Version: d.version,
+	}
+
 	metaPath := path.Join(d.notesDirectoryPath, d.metaFilename)
 	metaFile, err := os.Create(metaPath)
 	if err != nil {
 		return nil, fmt.Errorf("create meta file: %v", err)
 	}
-	defer metaFile.Close()
-
-	m := &notes.Meta{
-		Version: d.version,
-	}
 
 	err = json.NewEncoder(metaFile).Encode(m)
 	if err != nil {
+		metaFile.Close()
 		return nil, fmt.Errorf("encode meta file: %v", err)
 	}
 
@@ -198,11 +200,11 @@ func (d *local) GetMeta() (*notes.Meta, error) {
 		meta, err := d.buildNewMeta()
 		return meta, err
 	}
-	defer metaFile.Close()
 
 	var m notes.Meta
 	err = json.NewDecoder(metaFile).Decode(&m)
 	if err != nil {
+		metaFile.Close()
 		return nil, fmt.Errorf("decode meta file: %v", err)
 	}
 
@@ -233,10 +235,10 @@ func (d *local) SaveMeta(meta *notes.Meta) error {
 		}
 		return fmt.Errorf("create meta file: %v", err)
 	}
-	defer metaFile.Close()
 
 	err = json.NewEncoder(metaFile).Encode(meta)
 	if err != nil {
+		metaFile.Close()
 		return fmt.Errorf("encode meta file: %v", err)
 	}
 
@@ -259,11 +261,11 @@ func (d *local) GetNote(id int) (*notes.Note, error) {
 	if err != nil {
 		return nil, fmt.Errorf("open note file: %v", err)
 	}
-	defer noteFile.Close()
 
 	var n notes.Note
 	err = json.NewDecoder(noteFile).Decode(&n)
 	if err != nil {
+		noteFile.Close()
 		return nil, fmt.Errorf("decode note file: %v", err)
 	}
 
@@ -284,11 +286,10 @@ func (d *local) SaveNote(note *notes.Note) error {
 	if err != nil {
 		return fmt.Errorf("create note file: %v", err)
 	}
-	defer noteFile.Close()
 
 	err = json.NewEncoder(noteFile).Encode(note)
 	if err != nil {
-		os.Remove(notePath) // FIXME: do something with this error
+		noteFile.Close()
 		return fmt.Errorf("encode note file: %v", err)
 	}
 
