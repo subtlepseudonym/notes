@@ -1,16 +1,23 @@
 # Changelog
 
 ## [2.0.0] -
+### Added
+- Caching for note retrieval
 
-## [1.2.2] -
+### Changed
+- Rename 'dalpkg' package to 'dal'
+- Index note meta information separately from overall meta
+- Stop using mitchellh/go-homedir in favor of std lib (introduced in go1.13.7)
+
+## [1.2.2] - 2019-12-17
 ### Changed
 - Background updater has more descriptive logging
 
-## [1.2.1] -
+## [1.2.1] - 2019-12-12
 ### Fixed
 - Logging correctly uses the shared state logger
 
-## [1.2.0] -
+## [1.2.0] - 2019-12-12
 ### Added
 - Generate release candidate versions for \*-rc branches in build tag script
 - Loads of additional logging
