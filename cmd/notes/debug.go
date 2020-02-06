@@ -17,15 +17,15 @@ func (a *App) buildDebugCommand() cli.Command {
 		Usage:       "access debugging tools",
 		Description: "Access lower-level structures, implementation details, and other debugging utilities. The behavior of this command and its subcommands are subject to breaking changes across non-major releases",
 		Subcommands: []cli.Command{
-			debugGetNote(),
-			debugGetMeta(),
-			debugGetIndex(),
-			debugRebuildIndex(),
+			a.getNote(),
+			a.getMeta(),
+			a.getIndex(),
+			a.rebuildIndex(),
 		},
 	}
 }
 
-func debugGetNote() cli.Command {
+func (a *App) debugGetNote() cli.Command {
 	return cli.Command{
 		Name:        "get-note",
 		Usage:       "print note structure",
@@ -72,7 +72,7 @@ func (a *App) getNoteAction(ctx *cli.Context) error {
 	return nil
 }
 
-func debugGetMeta() cli.Command {
+func (a *App) debugGetMeta() cli.Command {
 	return cli.Command{
 		Name:        "get-meta",
 		Usage:       "print meta structure",
@@ -109,7 +109,7 @@ func (a *App) getMetaAction(ctx *cli.Context) error {
 	return nil
 }
 
-func debugGetIndex() cli.Command {
+func (a *App) debugGetIndex() cli.Command {
 	return cli.Command{
 		Name:        "get-index",
 		Usage:       "print index structure",
@@ -146,7 +146,7 @@ func (a *App) getIndexAction(ctx *cli.Context) error {
 	return nil
 }
 
-func debugRebuildIndex() cli.Command {
+func (a *App) debugRebuildIndex() cli.Command {
 	return cli.Command{
 		Name:        "rebuild-index",
 		Usage:       "rebuild index file",
