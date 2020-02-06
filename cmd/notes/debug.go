@@ -5,9 +5,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path"
+	"regexp"
 	"strconv"
 
+	"github.com/subtlepseudonym/notes"
 	"github.com/urfave/cli"
 )
 
@@ -25,7 +29,7 @@ func (a *App) buildDebugCommand() cli.Command {
 	}
 }
 
-func (a *App) debugGetNote() cli.Command {
+func (a *App) getNote() cli.Command {
 	return cli.Command{
 		Name:        "get-note",
 		Usage:       "print note structure",
@@ -72,7 +76,7 @@ func (a *App) getNoteAction(ctx *cli.Context) error {
 	return nil
 }
 
-func (a *App) debugGetMeta() cli.Command {
+func (a *App) getMeta() cli.Command {
 	return cli.Command{
 		Name:        "get-meta",
 		Usage:       "print meta structure",
@@ -109,7 +113,7 @@ func (a *App) getMetaAction(ctx *cli.Context) error {
 	return nil
 }
 
-func (a *App) debugGetIndex() cli.Command {
+func (a *App) getIndex() cli.Command {
 	return cli.Command{
 		Name:        "get-index",
 		Usage:       "print index structure",
@@ -139,19 +143,19 @@ func (a *App) getIndexAction(ctx *cli.Context) error {
 		return fmt.Errorf("marshal index: %w", err)
 	}
 
-	_, err = ctx.AppWriter.Write(b)
+	_, err = ctx.App.Writer.Write(b)
 	if err != nil {
 		return fmt.Errorf("write to app writer: %w", err)
 	}
 	return nil
 }
 
-func (a *App) debugRebuildIndex() cli.Command {
+func (a *App) rebuildIndex() cli.Command {
 	return cli.Command{
 		Name:        "rebuild-index",
 		Usage:       "rebuild index file",
 		Description: "Create the index file from scratch. This is only useful when use the local DAL",
-		Action:      a.rebuildIndexAction(),
+		Action:      a.rebuildIndexAction,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "force",
@@ -171,7 +175,7 @@ func (a *App) debugRebuildIndex() cli.Command {
 }
 
 func (a *App) rebuildIndexAction(ctx *cli.Context) error {
-	notesDir := path.Join(a.homedir, defaultNotesDirectory)
+	notesDir := path.Join(a.homeDir, defaultNotesDirectory)
 	a.logger = a.logger.Named("rebuild-index")
 
 	if _, err := os.Stat(notesDir); os.IsNotExist(err) {
@@ -179,7 +183,7 @@ func (a *App) rebuildIndexAction(ctx *cli.Context) error {
 			return fmt.Errorf("local DAL not found: %w\nuse --force if you'd like to rebuild anyway", err)
 		}
 
-		err = os.Mkdir(notesDir, osModDir|os.FileMode(0700))
+		err = os.Mkdir(notesDir, os.ModeDir|os.FileMode(0700))
 		if err != nil {
 			return fmt.Errorf("create notes directory: %w", err)
 		}
@@ -222,7 +226,7 @@ func (a *App) rebuildIndexAction(ctx *cli.Context) error {
 
 	// FIXME: this will need to be updated if the default index filename is ever changed or
 	// 		  if the option to rename the file is ever provided
-	indexPath := path.Join(a.homedir, "index")
+	indexPath := path.Join(a.homeDir, "index")
 	backupIndex := !ctx.Bool("no-backup")
 	if backupIndex {
 		err := os.Rename(indexPath, indexPath+".rebuild.bak")
