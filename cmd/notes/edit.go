@@ -74,7 +74,7 @@ func getNoteID(meta *notes.Meta, index notes.Index, arg string, searchDepth int)
 	}
 
 	if noteID == 0 {
-		// FIXME: may want to log a note that this is based upon content of the meta rather than a DAL existence check
+		// FIXME: may want to log a note that this is based upon content of the index / meta rather than the DAL
 		return 0, fmt.Errorf("latest note ID ⊄ [%x,%x], try using noteID argument or --latest-depth", meta.LatestID-searchDepth, meta.LatestID)
 	}
 
