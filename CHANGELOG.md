@@ -3,6 +3,8 @@
 ## [2.0.0] -
 ### Added
 - Caching for note retrieval
+- Debug command for getting index object
+- Debug command for rebuilding index
 
 ### Changed
 - Rename 'dalpkg' package to 'dal'
