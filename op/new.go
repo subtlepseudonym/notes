@@ -5,55 +5,39 @@ import (
 	"time"
 
 	"github.com/subtlepseudonym/notes"
-	"github.com/subtlepseudonym/notes/dal"
+
+	"go.uber.org/zap"
 )
 
 const (
-	defaultDateTitleFormat = time.RFC1123
+	defaultDateTitleFormat   = time.RFC1123
+	defaultDateTitleLocation = "UTC"
 )
 
 // NewNoteOptions provides values by which to alter the Note created by NewNote
 type NewNoteOptions struct {
-	Title        string `json:"title"`
-	DateFormat   string `json:"dateFormat"`
-	DateLocation string `json:"dateLocation"`
+	Title          string        `json:"title"`
+	DateFormat     string        `json:"dateFormat"`
+	DateLocation   string        `json:"dateLocation"`
+	UpdateInterval time.Duration `json:"updateInterval"`
 }
 
-// NewNote creates a new note object and populates it according to the provided options
-// and updates the state accordingly
-func NewNote(data dal.DAL, options NewNoteOptions) error {
-	index, err := data.GetIndex()
-	if err != nil {
-		return fmt.Errorf("get index: %v", err)
-	}
-
-	meta, err := data.GetMeta()
-	if err != nil {
-		return fmt.Errorf("get meta: %v", err)
-	}
-
-	// FIXME: use UUIDs
-	newNoteID := meta.LatestID + 1
-	if _, ok := index[newNoteID]; ok {
-		return fmt.Errorf("note ID: must be unique")
+// NewNote creates a new note object according to the provided options and populates
+// the body with the provided UpdateBodyFunc
+func NewNote(ctx *Context, options NewNoteOptions, updateBody UpdateBodyFunc) (*Context, error) {
+	newNoteID := ctx.Meta.LatestID + 1
+	if _, ok := ctx.Index[newNoteID]; ok {
+		return ctx, fmt.Errorf("note ID %d (%x) already exists", newNoteID, newNoteID)
 	}
 
 	title := options.Title
 	if title == "" {
-		format := defaultDateTitleFormat
-		if options.DateFormat != "" {
-			format = options.DateFormat
-		}
+		title = timestampTitle(ctx, options.DateFormat, options.DateLocation)
+	}
 
-		loc := time.UTC
-		if options.DateLocation != "" {
-			l, err := time.LoadLocation(options.DateLocation)
-			if err == nil {
-				loc = l
-			}
-		}
-
-		title = time.Now().In(loc).Format(format)
+	body, err := updateBody()
+	if err != nil {
+		return ctx, fmt.Errorf("update body: %v", err)
 	}
 
 	note := &notes.Note{
@@ -63,30 +47,49 @@ func NewNote(data dal.DAL, options NewNoteOptions) error {
 			Created: notes.JSONTime{time.Now()},
 			Deleted: notes.JSONTime{time.Unix(0, 0)},
 		},
+		Body: body,
 	}
 
-	err = data.SaveNote(note)
+	err = ctx.DAL.SaveNote(note)
 	if err != nil {
-		return fmt.Errorf("save note: %v", err)
+		return ctx, fmt.Errorf("save note: %v", err)
 	}
 
-	index[note.Meta.ID] = note.Meta
-	err = data.SaveIndex(index)
+	ctx.Index[note.Meta.ID] = note.Meta
+	err = ctx.DAL.SaveIndex(ctx.Index)
 	if err != nil {
-		return fmt.Errorf("save index: %v", err)
+		return ctx, fmt.Errorf("save index: %v", err)
 	}
 
-	meta.LatestID = note.Meta.ID
-	metaSize, err := meta.ApproxSize()
+	ctx.Meta.LatestID = note.Meta.ID
+	metaSize, err := ctx.Meta.ApproxSize()
 	if err != nil {
-		return fmt.Errorf("approximate meta size: %w", err)
+		ctx.Logger.Error("Failed to approximate meta size", zap.Error(err))
+	} else {
+		ctx.Meta.Size = metaSize
 	}
-	meta.Size = metaSize
 
-	err = data.SaveMeta(meta)
+	err = ctx.DAL.SaveMeta(ctx.Meta)
 	if err != nil {
-		return fmt.Errorf("save meta: %v", err)
+		return ctx, fmt.Errorf("save meta: %v", err)
 	}
 
-	return nil
+	return ctx, nil
+}
+
+func timestampTitle(ctx *Context, format, location string) string {
+	if format == "" {
+		format = defaultDateTitleFormat
+	}
+
+	if location == "" {
+		location = defaultDateTitleLocation
+	}
+	loc, err := time.LoadLocation(location)
+	if err != nil {
+		loc = time.UTC
+		ctx.Logger.Error("Failed to load location, defaulting to UTC", zap.Error(err), zap.String("location", location))
+	}
+
+	return time.Now().In(loc).Format(format)
 }
