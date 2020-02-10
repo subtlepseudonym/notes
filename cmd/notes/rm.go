@@ -63,6 +63,7 @@ func (a *App) rmAction(ctx *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("save index: %w", err)
 	}
+	logger.Info("index updated", zap.Int("length", len(a.index)))
 
 	return nil
 }

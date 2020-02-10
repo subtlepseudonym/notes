@@ -115,6 +115,7 @@ func (a *App) newAction(ctx *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("save index: %w", err)
 	}
+	logger.Info("index updated", zap.Int("length", len(a.index)))
 
 	a.meta.Size = metaSize
 	err = a.dal.SaveMeta(a.meta)

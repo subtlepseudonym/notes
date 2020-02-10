@@ -87,6 +87,7 @@ func (a *App) watchAndUpdate(ctx *cli.Context, note *notes.Note, filename string
 			if err != nil {
 				return fmt.Errorf("save index: %w", err)
 			}
+			logger.Info("index updated", zap.Int("length", len(a.index)))
 		}
 	}
 
