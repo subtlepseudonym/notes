@@ -64,10 +64,5 @@ func (a *App) rmAction(ctx *cli.Context) error {
 		return fmt.Errorf("save index: %w", err)
 	}
 
-	err = a.dal.SaveMeta(a.meta)
-	if err != nil {
-		return fmt.Errorf("save meta: %w", err)
-	}
-
 	return nil
 }

@@ -132,23 +132,11 @@ func (a *App) editAction(ctx *cli.Context) error {
 	}
 	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
-	metaSize, err := a.meta.ApproxSize()
-	if err != nil {
-		return fmt.Errorf("get meta size: %w", err)
-	}
-
 	a.index[note.Meta.ID] = note.Meta
 	err = a.dal.SaveIndex(a.index)
 	if err != nil {
 		return fmt.Errorf("save index: %w", err)
 	}
-
-	a.meta.Size = metaSize
-	err = a.dal.SaveMeta(a.meta)
-	if err != nil {
-		return fmt.Errorf("save meta: %w", err)
-	}
-	logger.Info("meta updated", zap.Int("metaSize", a.meta.Size))
 
 	return nil
 }
