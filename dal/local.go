@@ -372,8 +372,9 @@ func createDirIfNotExists(dirname string) error {
 		return os.Mkdir(dirname, os.ModeDir|os.FileMode(0700))
 	}
 
-	if info.IsDir() {
-		return nil
+	if !info.IsDir() {
+		return fmt.Errorf("file %s exists, but is not a directory", dirname)
 	}
-	return fmt.Errorf("file %q exists, but is not a directory", dirname)
+
+	return nil
 }
