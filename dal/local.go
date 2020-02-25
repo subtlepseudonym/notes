@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	defaultNotebook           = "notes"
 	defaultIndexFilename      = "index"
 	defaultMetaFilename       = "meta"
 	defaultNoteFilenameFormat = "%06d"
@@ -40,7 +39,6 @@ func NewLocal(dirName, version string) (DAL, error) {
 	return &local{
 		version:            version,
 		baseDirectory:      path.Join(home, dirName),
-		notebook:           defaultNotebook,
 		indexFilename:      defaultIndexFilename,
 		metaFilename:       defaultMetaFilename,
 		noteFilenameFormat: defaultNoteFilenameFormat,
