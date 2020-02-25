@@ -7,6 +7,10 @@ import (
 // DAL interfaces the method by which we access the source of
 // Meta and Note objects
 type DAL interface {
+	CreateNotebook(string) error
+	SetNotebook(string) error
+	RemoveNotebook(string) error
+
 	GetIndex() (notes.Index, error)
 	SaveIndex(notes.Index) error
 
