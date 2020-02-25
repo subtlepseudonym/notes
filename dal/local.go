@@ -47,19 +47,6 @@ func NewLocalDAL(dirName, version string) (DAL, error) {
 	}, nil
 }
 
-func (d *local) notebookPath(name string) (string, error) {
-	dirPath := path.Join(d.baseDirectory, d.notebook)
-	info, err := os.Stat(dirPath)
-	if err != nil {
-		return "", err
-	}
-
-	if info.IsDir() {
-		return dirPath, nil
-	}
-	return "", fmt.Errorf("notebook %q file exists, but is not a directory", dirPath)
-}
-
 func (d *local) CreateNotebook(name string) error {
 	return nil
 }
@@ -78,17 +65,13 @@ func (d *local) buildNewIndex() (notes.Index, error) {
 		return nil, fmt.Errorf("create base directory: %w", err)
 	}
 
-	notebookPath, err := d.notebookPath(d.notebook)
-	if err != nil {
-		return nil, fmt.Errorf("get notebook: %w", err)
-	}
-
-	index := notes.NewIndex(0) // use default capacity
+	notebookPath := path.Join(d.baseDirectory, d.notebook)
 	infos, err := ioutil.ReadDir(notebookPath)
 	if err != nil {
 		return nil, fmt.Errorf("read notes directory: %v", err)
 	}
 
+	index := notes.NewIndex(0) // use default capacity
 	nameRegex := regexp.MustCompile(noteFilenameRegex)
 	for _, info := range infos {
 		if info.IsDir() || !nameRegex.MatchString(info.Name()) {
@@ -98,14 +81,14 @@ func (d *local) buildNewIndex() (notes.Index, error) {
 		noteFilename := path.Join(notebookPath, info.Name())
 		notefile, err := os.Open(noteFilename)
 		if err != nil {
-			// todo: log this
+			// TODO: log this
 			continue
 		}
 
 		var note notes.Note
 		err = json.NewDecoder(notefile).Decode(&note)
 		if err != nil {
-			// todo: log this
+			// TODO: log this
 			notefile.Close()
 			continue
 		}
@@ -137,12 +120,7 @@ func (d *local) GetIndex() (notes.Index, error) {
 	d.Lock()
 	defer d.Unlock()
 
-	notebookPath, err := d.notebookPath(d.notebook)
-	if err != nil {
-		return nil, fmt.Errorf("get notebook: %w", err)
-	}
-
-	indexPath := path.Join(notebookPath, d.indexFilename)
+	indexPath := path.Join(d.baseDirectory, d.notebook, d.indexFilename)
 	indexFile, err := os.Open(indexPath)
 	if err != nil {
 		return d.buildNewIndex()
@@ -166,13 +144,8 @@ func (d *local) SaveIndex(index notes.Index) error {
 	d.Lock()
 	defer d.Unlock()
 
-	notebookPath, err := d.notebookPath(d.notebook)
-	if err != nil {
-		return fmt.Errorf("get notebook: %w", err)
-	}
-
-	indexPath := path.Join(notebookPath, d.indexFilename)
-	err = os.Rename(indexPath, indexPath+".bak")
+	indexPath := path.Join(d.baseDirectory, d.notebook, d.indexFilename)
+	err := os.Rename(indexPath, indexPath+".bak")
 	if err != nil {
 		return fmt.Errorf("backup index file: %v", err)
 	}
@@ -205,12 +178,7 @@ func (d *local) buildNewMeta() (*notes.Meta, error) {
 		return nil, fmt.Errorf("create base directory: %w", err)
 	}
 
-	notebookPath, err := d.notebookPath(d.notebook)
-	if err != nil {
-		return nil, fmt.Errorf("get notebook: %w", err)
-	}
-
-	metaPath := path.Join(notebookPath, d.metaFilename)
+	metaPath := path.Join(d.baseDirectory, d.notebook, d.metaFilename)
 	metaFile, err := os.Create(metaPath)
 	if err != nil {
 		return nil, fmt.Errorf("create meta file: %v", err)
@@ -238,12 +206,7 @@ func (d *local) GetMeta() (*notes.Meta, error) {
 	d.Lock()
 	defer d.Unlock()
 
-	notebookPath, err := d.notebookPath(d.notebook)
-	if err != nil {
-		return nil, fmt.Errorf("get notebook: %w", err)
-	}
-
-	metaPath := path.Join(notebookPath, d.metaFilename)
+	metaPath := path.Join(d.baseDirectory, d.notebook, d.metaFilename)
 	metaFile, err := os.Open(metaPath)
 	if err != nil {
 		meta, err := d.buildNewMeta()
@@ -269,13 +232,8 @@ func (d *local) SaveMeta(meta *notes.Meta) error {
 	d.Lock()
 	defer d.Unlock()
 
-	notebookPath, err := d.notebookPath(d.notebook)
-	if err != nil {
-		return fmt.Errorf("get notebook: %w", err)
-	}
-
-	metaPath := path.Join(notebookPath, d.metaFilename)
-	err = os.Rename(metaPath, metaPath+".bak")
+	metaPath := path.Join(d.baseDirectory, d.notebook, d.metaFilename)
+	err := os.Rename(metaPath, metaPath+".bak")
 	if err != nil {
 		return fmt.Errorf("backup old meta file: %v", err)
 	}
@@ -305,12 +263,7 @@ func (d *local) SaveMeta(meta *notes.Meta) error {
 
 func (d *local) getNotePath(id int) (string, error) {
 	noteFilename := fmt.Sprintf(d.noteFilenameFormat, id)
-	notebookPath, err := d.notebookPath(d.notebook)
-	if err != nil {
-		return "", fmt.Errorf("get notebook: %w", err)
-	}
-
-	return path.Join(notebookPath, noteFilename), nil
+	return path.Join(d.baseDirectory, d.notebook, noteFilename), nil
 }
 
 // GetNote retrieves and decodes a Note from file
