@@ -11,7 +11,7 @@ import (
 func TestNewLocalDAL(t *testing.T) {
 	version := "totally not a semantic version"
 	dir := "notes_test_dir"
-	dal, err := NewLocalDAL(dir, version)
+	dal, err := NewLocal(dir, version)
 	if err != nil {
 		t.Error(err)
 	}

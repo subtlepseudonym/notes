@@ -134,7 +134,7 @@ func (a *App) setup(ctx *cli.Context) error {
 	}
 	a.logger = logger
 
-	dal, err := dalpkg.NewLocalDAL(defaultNotesDirectory, Version) // FIXME: option to use different dal
+	dal, err := dalpkg.NewLocal(defaultNotesDirectory, Version) // FIXME: option to use different dal
 	if err != nil {
 		return fmt.Errorf("initialize dal: %v", err)
 	}

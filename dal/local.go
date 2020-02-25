@@ -30,8 +30,8 @@ type local struct {
 	noteFilenameFormat string
 }
 
-// NewLocalDAL initializes a DAL with the default options
-func NewLocalDAL(dirName, version string) (DAL, error) {
+// NewLocal initializes a DAL with the default options
+func NewLocal(dirName, version string) (DAL, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, fmt.Errorf("get home directory: %v", err)
