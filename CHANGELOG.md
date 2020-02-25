@@ -5,11 +5,13 @@
 - Caching for note retrieval
 - Debug command for getting index object
 - Debug command for rebuilding index
+- Separate 'notebooks' for partitioning notes
 
 ### Changed
-- Rename 'dalpkg' package to 'dal'
+- Rename notes/dal package dalpkg to dal
 - Index note meta information separately from overall meta
-- Stop using mitchellh/go-homedir in favor of std lib (introduced in go1.13.7)
+- Stop using mitchellh/go-homedir in favor of os.UserHomeDir (introduced in go1.13.7)
+- Rename dal.NewLocalDAL to dal.NewLocal
 
 ## [1.2.2] - 2019-12-17
 ### Changed
