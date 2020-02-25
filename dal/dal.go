@@ -9,7 +9,7 @@ import (
 type DAL interface {
 	CreateNotebook(string) error
 	SetNotebook(string) error
-	RemoveNotebook(string) error
+	RemoveNotebook(string, bool) error
 
 	GetIndex() (notes.Index, error)
 	SaveIndex(notes.Index) error

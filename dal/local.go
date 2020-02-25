@@ -48,15 +48,43 @@ func NewLocalDAL(dirName, version string) (DAL, error) {
 }
 
 func (d *local) CreateNotebook(name string) error {
-	return nil
+	notebookPath := path.Join(d.baseDirectory, name)
+	return os.Mkdir(notebookPath, os.ModeDir|os.FileMode(0700))
 }
 
 func (d *local) SetNotebook(name string) error {
+	notebookPath := path.Join(d.baseDirectory, name)
+	info, err := os.Stat(notebookPath)
+	if err != nil {
+		return fmt.Errorf("stat notebook directory: %v", err)
+	}
+
+	if !info.IsDir() {
+		return fmt.Errorf("file %s exists, but is not a directory", notebookPath)
+	}
+
+	d.Lock()
+	d.notebook = name
+	d.Unlock()
+
 	return nil
 }
 
-func (d *local) RemoveNotebook(name string) error {
-	return nil
+func (d *local) RemoveNotebook(name string, recursive bool) error {
+	notebookPath := path.Join(d.baseDirectory, name)
+	info, err := os.Stat(notebookPath)
+	if err != nil {
+		return fmt.Errorf("stat notebook directory: %v", err)
+	}
+
+	if !info.IsDir() {
+		return fmt.Errorf("file %s exists, but is not a directory", notebookPath)
+	}
+
+	if recursive {
+		return os.RemoveAll(notebookPath)
+	}
+	return os.Remove(notebookPath)
 }
 
 func (d *local) buildNewIndex() (notes.Index, error) {
