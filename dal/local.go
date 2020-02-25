@@ -22,9 +22,9 @@ const (
 type local struct {
 	sync.Mutex
 	version            string
+	baseDirectory      string
 	indexFilename      string
 	metaFilename       string
-	notesDirectoryPath string
 	noteFilenameFormat string
 }
 
@@ -37,19 +37,17 @@ func NewLocalDAL(dirName, version string) (DAL, error) {
 
 	return &local{
 		version:            version,
+		baseDirectory:      path.Join(home, dirName),
 		indexFilename:      defaultIndexFilename,
 		metaFilename:       defaultMetaFilename,
-		notesDirectoryPath: path.Join(home, dirName),
 		noteFilenameFormat: defaultNoteFilenameFormat,
 	}, nil
 }
 
 func (d *local) buildNewIndex() (notes.Index, error) {
-	if _, err := os.Stat(d.notesDirectoryPath); os.IsNotExist(err) {
-		err = os.Mkdir(d.notesDirectoryPath, os.ModeDir|os.FileMode(0700))
-		if err != nil {
-			return nil, fmt.Errorf("create notes directory: %v", err)
-		}
+	err := createDirIfNotExists(d.baseDirectory)
+	if err != nil {
+		return nil, fmt.Errorf("create base directory: %w", err)
 	}
 
 	index := notes.NewIndex(0) // use default capacity
@@ -159,11 +157,9 @@ func (d *local) SaveIndex(index notes.Index) error {
 }
 
 func (d *local) buildNewMeta() (*notes.Meta, error) {
-	if _, err := os.Stat(d.notesDirectoryPath); os.IsNotExist(err) {
-		err = os.Mkdir(d.notesDirectoryPath, os.ModeDir|os.FileMode(0700))
-		if err != nil {
-			return nil, fmt.Errorf("create notes directory: %v", err)
-		}
+	err := createDirIfNotExists(d.baseDirectory)
+	if err != nil {
+		return nil, fmt.Errorf("create base directory: %w", err)
 	}
 
 	m := &notes.Meta{
@@ -312,4 +308,16 @@ func (d *local) RemoveNote(id int) error {
 	}
 
 	return nil
+}
+
+func createDirIfNotExists(dirname string) error {
+	info, err := os.Stat(dirname)
+	if os.IsNotExist(err) {
+		return os.Mkdir(dirname, os.ModeDir|os.FileMode(0700))
+	}
+
+	if info.IsDir() {
+		return nil
+	}
+	return fmt.Errorf("file %q exists, but is not a directory", dirname)
 }
