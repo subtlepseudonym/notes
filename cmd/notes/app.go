@@ -12,7 +12,7 @@ import (
 	"sync"
 
 	"github.com/subtlepseudonym/notes"
-	dalpkg "github.com/subtlepseudonym/notes/dal"
+	"github.com/subtlepseudonym/notes/dal"
 	"github.com/subtlepseudonym/notes/dal/cache"
 
 	"github.com/Masterminds/semver"
@@ -44,7 +44,7 @@ type App struct {
 	setupOnce sync.Once
 
 	logger *zap.Logger
-	dal    dalpkg.DAL
+	data    dal.DAL
 	meta   *notes.Meta
 	index  notes.Index
 
@@ -134,7 +134,7 @@ func (a *App) setup(ctx *cli.Context) error {
 	}
 	a.logger = logger
 
-	dal, err := dalpkg.NewLocal(defaultNotesDirectory, Version) // FIXME: option to use different dal
+	data, err := dal.NewLocal(defaultNotesDirectory, Version) // FIXME: option to use different dal
 	if err != nil {
 		return fmt.Errorf("initialize dal: %v", err)
 	}
@@ -145,20 +145,20 @@ func (a *App) setup(ctx *cli.Context) error {
 
 	switch strings.ToLower(ctx.String("cache")) {
 	case "lru", "least-recently-used":
-		a.dal = cache.NewNoteCache(dal, cache.LRU, ctx.Int("capacity"))
+		a.data = cache.NewNoteCache(data, cache.LRU, ctx.Int("capacity"))
 	case "rr", "random-replacement":
-		a.dal = cache.NewNoteCache(dal, cache.RR, ctx.Int("capacity"))
+		a.data = cache.NewNoteCache(data, cache.RR, ctx.Int("capacity"))
 	default:
-		a.dal = dal
+		a.data = data
 	}
 
-	index, err := dal.GetIndex()
+	index, err := data.GetIndex()
 	if err != nil {
 		return fmt.Errorf("get index: %v", err)
 	}
 	a.index = index
 
-	meta, err := dal.GetMeta()
+	meta, err := data.GetMeta()
 	if err != nil {
 		return fmt.Errorf("get meta: %v", err)
 	}
@@ -244,7 +244,7 @@ func (a *App) checkMetaVersion() error {
 		}
 
 		a.meta.Size = size
-		err = a.dal.SaveMeta(a.meta)
+		err = a.data.SaveMeta(a.meta)
 		if err != nil {
 			return fmt.Errorf("update meta version: save meta: %v", err)
 		}

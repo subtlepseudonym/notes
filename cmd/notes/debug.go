@@ -55,7 +55,7 @@ func (a *App) getNoteAction(ctx *cli.Context) error {
 	}
 	noteID := int(n)
 
-	note, err := a.dal.GetNote(noteID)
+	note, err := a.data.GetNote(noteID)
 	if err != nil {
 		return fmt.Errorf("get note: %w", err)
 	}
@@ -95,7 +95,7 @@ func (a *App) getMetaAction(ctx *cli.Context) error {
 	meta := a.meta
 	if !ctx.Bool("in-memory") {
 		var err error
-		meta, err = a.dal.GetMeta()
+		meta, err = a.data.GetMeta()
 		if err != nil {
 			return fmt.Errorf("get meta from dal: %w", err)
 		}
@@ -132,7 +132,7 @@ func (a *App) getIndexAction(ctx *cli.Context) error {
 	index := a.index
 	if !ctx.Bool("in-memory") {
 		var err error
-		index, err = a.dal.GetIndex()
+		index, err = a.data.GetIndex()
 		if err != nil {
 			return fmt.Errorf("get index from dal: %w", err)
 		}

@@ -98,7 +98,7 @@ func (a *App) newAction(ctx *cli.Context) error {
 		}
 	}
 
-	err = a.dal.SaveNote(note)
+	err = a.data.SaveNote(note)
 	if err != nil {
 		// FIXME: persist the note somewhere if saving it fails
 		return fmt.Errorf("save note: %w", err)
@@ -111,14 +111,14 @@ func (a *App) newAction(ctx *cli.Context) error {
 	}
 
 	a.index[note.Meta.ID] = note.Meta
-	err = a.dal.SaveIndex(a.index)
+	err = a.data.SaveIndex(a.index)
 	if err != nil {
 		return fmt.Errorf("save index: %w", err)
 	}
 	logger.Info("index updated", zap.Int("length", len(a.index)))
 
 	a.meta.Size = metaSize
-	err = a.dal.SaveMeta(a.meta)
+	err = a.data.SaveMeta(a.meta)
 	if err != nil {
 		return fmt.Errorf("save meta: %w", err)
 	}

@@ -89,7 +89,7 @@ func (a *App) editAction(ctx *cli.Context) error {
 		return fmt.Errorf("get note ID: %w", err)
 	}
 
-	note, err := a.dal.GetNote(noteID)
+	note, err := a.data.GetNote(noteID)
 	if err != nil {
 		return fmt.Errorf("get note: %w", err)
 	}
@@ -126,14 +126,14 @@ func (a *App) editAction(ctx *cli.Context) error {
 		}
 	}
 
-	err = a.dal.SaveNote(note)
+	err = a.data.SaveNote(note)
 	if err != nil {
 		return fmt.Errorf("save note: %w", err)
 	}
 	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
 	a.index[note.Meta.ID] = note.Meta
-	err = a.dal.SaveIndex(a.index)
+	err = a.data.SaveIndex(a.index)
 	if err != nil {
 		return fmt.Errorf("save index: %w", err)
 	}

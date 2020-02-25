@@ -38,7 +38,7 @@ func (a *App) infoAction(ctx *cli.Context) error {
 		return fmt.Errorf("parse noteID argument: %w", err)
 	}
 
-	note, err := a.dal.GetNote(int(noteID))
+	note, err := a.data.GetNote(int(noteID))
 	if err != nil {
 		return fmt.Errorf("get note file: %w", err)
 	}

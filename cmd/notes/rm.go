@@ -36,13 +36,13 @@ func (a *App) rmAction(ctx *cli.Context) error {
 	}
 	noteID := int(n)
 
-	note, err := a.dal.GetNote(noteID)
+	note, err := a.data.GetNote(noteID)
 	if err != nil {
 		return fmt.Errorf("get note: %w", err)
 	}
 
 	if ctx.Bool("hard") {
-		err = a.dal.RemoveNote(noteID)
+		err = a.data.RemoveNote(noteID)
 		if err != nil {
 			return fmt.Errorf("remove note file: %w", err)
 		}
@@ -50,7 +50,7 @@ func (a *App) rmAction(ctx *cli.Context) error {
 		delete(a.index, note.Meta.ID)
 	} else {
 		note.Meta.Deleted.Time = time.Now()
-		err = a.dal.SaveNote(note)
+		err = a.data.SaveNote(note)
 		if err != nil {
 			return fmt.Errorf("save note: %w", err)
 		}
@@ -59,7 +59,7 @@ func (a *App) rmAction(ctx *cli.Context) error {
 		a.index[note.Meta.ID] = note.Meta
 	}
 
-	err = a.dal.SaveIndex(a.index)
+	err = a.data.SaveIndex(a.index)
 	if err != nil {
 		return fmt.Errorf("save index: %w", err)
 	}

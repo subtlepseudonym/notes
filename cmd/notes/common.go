@@ -76,14 +76,14 @@ func (a *App) watchAndUpdate(ctx *cli.Context, note *notes.Note, filename string
 				return fmt.Errorf("append edit to history: %w", err)
 			}
 
-			err = a.dal.SaveNote(note)
+			err = a.data.SaveNote(note)
 			if err != nil {
 				return fmt.Errorf("save note: %w", err)
 			}
 			logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
 
 			a.index[note.Meta.ID] = note.Meta
-			err = a.dal.SaveIndex(a.index)
+			err = a.data.SaveIndex(a.index)
 			if err != nil {
 				return fmt.Errorf("save index: %w", err)
 			}
