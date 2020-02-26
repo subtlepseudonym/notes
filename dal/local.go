@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	defaultIndexFilename      = "index"
 	defaultMetaFilename       = "meta"
+	defaultIndexFilename      = "index"
 	defaultNoteFilenameFormat = "%06d"
 	noteFilenameRegex         = `[0-9]{6}`
 )
@@ -71,10 +71,70 @@ func NewLocal(dirName, version string) (DAL, error) {
 
 	return &local{
 		baseDirectory:      path.Join(home, dirName),
-		indexFilename:      defaultIndexFilename,
 		metaFilename:       defaultMetaFilename,
+		indexFilename:      defaultIndexFilename,
 		noteFilenameFormat: defaultNoteFilenameFormat,
 	}, nil
+}
+
+// GetMeta retrieves and decodes a Meta from file
+func (d *local) GetMeta() (*notes.Meta, error) {
+	d.Lock()
+	defer d.Unlock()
+
+	metaPath := path.Join(d.baseDirectory, d.metaFilename)
+	metaFile, err := os.Open(metaPath)
+	if err != nil {
+		meta, err := d.buildNewMeta()
+		return meta, err
+	}
+
+	var m notes.Meta
+	err = json.NewDecoder(metaFile).Decode(&m)
+	if err != nil {
+		metaFile.Close()
+		return nil, fmt.Errorf("decode meta file: %v", err)
+	}
+
+	err = metaFile.Close()
+	if err != nil {
+		return &m, fmt.Errorf("close meta file: %v", err)
+	}
+	return &m, nil
+}
+
+// SaveMeta encodes and saves the provided Meta to file
+func (d *local) SaveMeta(meta *notes.Meta) error {
+	d.Lock()
+	defer d.Unlock()
+
+	metaPath := path.Join(d.baseDirectory, d.metaFilename)
+	err := os.Rename(metaPath, metaPath+".bak")
+	if err != nil {
+		return fmt.Errorf("backup old meta file: %v", err)
+	}
+	// TODO: remove meta backup
+
+	metaFile, err := os.Create(metaPath)
+	if err != nil {
+		err = os.Rename(metaPath+".bak", metaPath)
+		if err != nil {
+			return fmt.Errorf("restore meta backup: %v", err)
+		}
+		return fmt.Errorf("create meta file: %v", err)
+	}
+
+	err = json.NewEncoder(metaFile).Encode(meta)
+	if err != nil {
+		metaFile.Close()
+		return fmt.Errorf("encode meta file: %v", err)
+	}
+
+	err = metaFile.Close()
+	if err != nil {
+		return fmt.Errorf("close meta file: %v", err)
+	}
+	return nil
 }
 
 func (d *local) CreateNotebook(name string) error {
@@ -124,64 +184,9 @@ func (d *local) RemoveNotebook(name string, recursive bool) error {
 	if recursive {
 		return os.RemoveAll(notebookPath)
 	}
+
+	// TODO: check for notebook contents, remove index, then os.Remove
 	return os.Remove(notebookPath)
-}
-
-func (d *local) buildNewIndex() (notes.Index, error) {
-	err := createDirIfNotExists(d.baseDirectory)
-	if err != nil {
-		return nil, fmt.Errorf("create base directory: %w", err)
-	}
-
-	notebookPath := path.Join(d.baseDirectory, d.notebook)
-	infos, err := ioutil.ReadDir(notebookPath)
-	if err != nil {
-		return nil, fmt.Errorf("read notes directory: %v", err)
-	}
-
-	index := notes.NewIndex(0) // use default capacity
-	nameRegex := regexp.MustCompile(noteFilenameRegex)
-	for _, info := range infos {
-		if info.IsDir() || !nameRegex.MatchString(info.Name()) {
-			continue
-		}
-
-		noteFilename := path.Join(notebookPath, info.Name())
-		notefile, err := os.Open(noteFilename)
-		if err != nil {
-			// TODO: log this
-			continue
-		}
-
-		var note notes.Note
-		err = json.NewDecoder(notefile).Decode(&note)
-		if err != nil {
-			// TODO: log this
-			notefile.Close()
-			continue
-		}
-
-		index[note.Meta.ID] = note.Meta
-		notefile.Close()
-	}
-
-	indexPath := path.Join(notebookPath, d.indexFilename)
-	indexFile, err := os.Create(indexPath)
-	if err != nil {
-		return nil, fmt.Errorf("create index file: %v", err)
-	}
-
-	err = json.NewEncoder(indexFile).Encode(index)
-	if err != nil {
-		indexFile.Close()
-		return nil, fmt.Errorf("encode index file: %v", err)
-	}
-
-	err = indexFile.Close()
-	if err != nil {
-		return index, fmt.Errorf("close index file: %v", err)
-	}
-	return index, nil
 }
 
 func (d *local) GetIndex() (notes.Index, error) {
@@ -236,66 +241,6 @@ func (d *local) SaveIndex(index notes.Index) error {
 	err = indexFile.Close()
 	if err != nil {
 		return fmt.Errorf("close index file: %v", err)
-	}
-	return nil
-}
-
-// GetMeta retrieves and decodes a Meta from file
-func (d *local) GetMeta() (*notes.Meta, error) {
-	d.Lock()
-	defer d.Unlock()
-
-	metaPath := path.Join(d.baseDirectory, d.notebook, d.metaFilename)
-	metaFile, err := os.Open(metaPath)
-	if err != nil {
-		meta, err := d.buildNewMeta()
-		return meta, err
-	}
-
-	var m notes.Meta
-	err = json.NewDecoder(metaFile).Decode(&m)
-	if err != nil {
-		metaFile.Close()
-		return nil, fmt.Errorf("decode meta file: %v", err)
-	}
-
-	err = metaFile.Close()
-	if err != nil {
-		return &m, fmt.Errorf("close meta file: %v", err)
-	}
-	return &m, nil
-}
-
-// SaveMeta encodes and saves the provided Meta to file
-func (d *local) SaveMeta(meta *notes.Meta) error {
-	d.Lock()
-	defer d.Unlock()
-
-	metaPath := path.Join(d.baseDirectory, d.notebook, d.metaFilename)
-	err := os.Rename(metaPath, metaPath+".bak")
-	if err != nil {
-		return fmt.Errorf("backup old meta file: %v", err)
-	}
-	// TODO: remove meta backup
-
-	metaFile, err := os.Create(metaPath)
-	if err != nil {
-		err = os.Rename(metaPath+".bak", metaPath)
-		if err != nil {
-			return fmt.Errorf("restore meta backup: %v", err)
-		}
-		return fmt.Errorf("create meta file: %v", err)
-	}
-
-	err = json.NewEncoder(metaFile).Encode(meta)
-	if err != nil {
-		metaFile.Close()
-		return fmt.Errorf("encode meta file: %v", err)
-	}
-
-	err = metaFile.Close()
-	if err != nil {
-		return fmt.Errorf("close meta file: %v", err)
 	}
 	return nil
 }

@@ -11,16 +11,6 @@ const (
 	defaultIndexCapacity   = 256
 )
 
-type Index map[int]NoteMeta
-
-func NewIndex(capacity int) Index {
-	if capacity > 0 {
-		return Index(make(map[int]NoteMeta, capacity))
-	}
-
-	return Index(make(map[int]NoteMeta, defaultIndexCapacity))
-}
-
 // Meta holds meta information for the local notes storage as a whole
 type Meta struct {
 	Version     string   `json:"version"`
@@ -68,6 +58,16 @@ func (j *JSONTime) UnmarshalJSON(b []byte) error {
 
 	j.Time = time.Unix(0, i)
 	return nil
+}
+
+type Index map[int]NoteMeta
+
+func NewIndex(capacity int) Index {
+	if capacity > 0 {
+		return Index(make(map[int]NoteMeta, capacity))
+	}
+
+	return Index(make(map[int]NoteMeta, defaultIndexCapacity))
 }
 
 // NoteMeta holds meta information for one note to make commands that only access
