@@ -21,7 +21,6 @@ const (
 
 type local struct {
 	sync.Mutex
-	version            string
 	baseDirectory      string
 	notebook           string
 	indexFilename      string
@@ -36,8 +35,41 @@ func NewLocal(dirName, version string) (DAL, error) {
 		return nil, fmt.Errorf("get home directory: %v", err)
 	}
 
+	baseDirectory := path.Join(home, dirName)
+	info, err := os.Stat(baseDirectory)
+	if os.IsNotExist(err) {
+		err = os.Mkdir(baseDirectory, os.ModeDir|os.FileMode(0700))
+		if err != nil {
+			return nil, fmt.Errorf("make base directory: %v", err)
+		}
+	} else if err != nil {
+		return nil, fmt.Errorf("stat base directory: %v", err)
+	} else if !info.IsDir() {
+		return nil, fmt.Errorf("%s exists, but is not a directory", baseDirectory)
+	}
+
+	_, err = os.Stat(metaPath)
+	if os.IsNotExist(err) {
+		err = buildMeta(baseDirectory, defaultMetaFilename, version)
+		if err != nil {
+			return nil, fmt.Errorf("build meta: %v", err)
+		}
+	} else if err != nil {
+		return nil, fmt.Errorf("stat meta: %v", err)
+	}
+
+	indexPath := path.Join(baseDirectory, defaultIndexFilename)
+	_, err = os.Stat(indexPath)
+	if os.IsNotExist(err) {
+		err = buildIndex(baseDirectory, "", defaultIndexFilename)
+		if err != nil {
+			return nil, fmt.Errorf("build index: %v", err)
+		}
+	} else if err != nil {
+		return nil, fmt.Errorf("stat index: %v", err)
+	}
+
 	return &local{
-		version:            version,
 		baseDirectory:      path.Join(home, dirName),
 		indexFilename:      defaultIndexFilename,
 		metaFilename:       defaultMetaFilename,
@@ -47,7 +79,17 @@ func NewLocal(dirName, version string) (DAL, error) {
 
 func (d *local) CreateNotebook(name string) error {
 	notebookPath := path.Join(d.baseDirectory, name)
-	return os.Mkdir(notebookPath, os.ModeDir|os.FileMode(0700))
+	err :=  os.Mkdir(notebookPath, os.ModeDir|os.FileMode(0700))
+	if err != nil {
+		return fmt.Errorf("make notebook directory: %v", err)
+	}
+
+	err = buildIndex(d.baseDirectory, name, defaultIndexFilename)
+	if err != nil {
+		return fmt.Errorf("build index: %v", err)
+	}
+
+	return nil
 }
 
 func (d *local) SetNotebook(name string) error {
@@ -198,35 +240,6 @@ func (d *local) SaveIndex(index notes.Index) error {
 	return nil
 }
 
-func (d *local) buildNewMeta() (*notes.Meta, error) {
-	err := createDirIfNotExists(d.baseDirectory)
-	if err != nil {
-		return nil, fmt.Errorf("create base directory: %w", err)
-	}
-
-	metaPath := path.Join(d.baseDirectory, d.notebook, d.metaFilename)
-	metaFile, err := os.Create(metaPath)
-	if err != nil {
-		return nil, fmt.Errorf("create meta file: %v", err)
-	}
-
-	m := &notes.Meta{
-		Version: d.version,
-	}
-
-	err = json.NewEncoder(metaFile).Encode(m)
-	if err != nil {
-		metaFile.Close()
-		return nil, fmt.Errorf("encode meta file: %v", err)
-	}
-
-	err = metaFile.Close()
-	if err != nil {
-		return m, fmt.Errorf("close meta file: %v", err)
-	}
-	return m, nil
-}
-
 // GetMeta retrieves and decodes a Meta from file
 func (d *local) GetMeta() (*notes.Meta, error) {
 	d.Lock()
@@ -374,5 +387,86 @@ func createDirIfNotExists(dirname string) error {
 		return fmt.Errorf("file %s exists, but is not a directory", dirname)
 	}
 
+	return nil
+}
+
+func buildMeta(baseDirectory, filename, version string) error {
+	err := createDirIfNotExists(baseDirectory)
+	if err != nil {
+		return fmt.Errorf("create base directory: %w", err)
+	}
+
+	metaPath := path.Join(baseDirectory, filename)
+	metaFile, err := os.Create(metaPath)
+	if err != nil {
+		return fmt.Errorf("create meta file: %v", err)
+	}
+
+	m := &notes.Meta{
+		Version: version,
+	}
+
+	err = json.NewEncoder(metaFile).Encode(m)
+	if err != nil {
+		metaFile.Close()
+		return fmt.Errorf("encode meta file: %v", err)
+	}
+
+	err = metaFile.Close()
+	if err != nil {
+		return fmt.Errorf("close meta file: %v", err)
+	}
+	return nil
+}
+
+func buildIndex(baseDirectory, notebook, filename string) error {
+	notebookPath := path.Join(baseDirectory, notebook)
+	infos, err := ioutil.ReadDir(notebookPath)
+	if err != nil {
+		return fmt.Errorf("read notes directory: %v", err)
+	}
+
+	index := notes.NewIndex(0) // use default capacity
+	nameRegex := regexp.MustCompile(noteFilenameRegex)
+	for _, info := range infos {
+		if info.IsDir() || !nameRegex.MatchString(info.Name()) {
+			continue
+		}
+
+		noteFilename := path.Join(notebookPath, info.Name())
+		notefile, err := os.Open(noteFilename)
+		if err != nil {
+			// TODO: log this
+			continue
+		}
+
+		var note notes.Note
+		err = json.NewDecoder(notefile).Decode(&note)
+		if err != nil {
+			// TODO: log this
+			notefile.Close()
+			continue
+		}
+
+		index[note.Meta.ID] = note.Meta
+		notefile.Close()
+	}
+
+	indexPath := path.Join(notebookPath, filename)
+	indexFile, err := os.Create(indexPath)
+	if err != nil {
+		return fmt.Errorf("create index file: %v", err)
+	}
+
+	err = json.NewEncoder(indexFile).Encode(index)
+	if err != nil {
+		indexFile.Close()
+		return fmt.Errorf("encode index file: %v", err)
+	}
+
+	err = indexFile.Close()
+	if err != nil {
+		return fmt.Errorf("close index file: %v", err)
+	}
 	return nil
 }
