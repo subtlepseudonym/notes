@@ -48,6 +48,7 @@ func NewLocal(dirName, version string) (DAL, error) {
 		return nil, fmt.Errorf("%s exists, but is not a directory", baseDirectory)
 	}
 
+	metaPath := path.Join(baseDirectory, defaultMetaFilename)
 	_, err = os.Stat(metaPath)
 	if os.IsNotExist(err) {
 		err = buildMeta(baseDirectory, defaultMetaFilename, version)
@@ -85,8 +86,7 @@ func (d *local) GetMeta() (*notes.Meta, error) {
 	metaPath := path.Join(d.baseDirectory, d.metaFilename)
 	metaFile, err := os.Open(metaPath)
 	if err != nil {
-		meta, err := d.buildNewMeta()
-		return meta, err
+		return nil, fmt.Errorf("open meta file: %v", err)
 	}
 
 	var m notes.Meta
@@ -139,7 +139,7 @@ func (d *local) SaveMeta(meta *notes.Meta) error {
 
 func (d *local) CreateNotebook(name string) error {
 	notebookPath := path.Join(d.baseDirectory, name)
-	err :=  os.Mkdir(notebookPath, os.ModeDir|os.FileMode(0700))
+	err := os.Mkdir(notebookPath, os.ModeDir|os.FileMode(0700))
 	if err != nil {
 		return fmt.Errorf("make notebook directory: %v", err)
 	}
@@ -196,7 +196,7 @@ func (d *local) GetIndex() (notes.Index, error) {
 	indexPath := path.Join(d.baseDirectory, d.notebook, d.indexFilename)
 	indexFile, err := os.Open(indexPath)
 	if err != nil {
-		return d.buildNewIndex()
+		return nil, fmt.Errorf("open index file: %v", err)
 	}
 
 	var index notes.Index
