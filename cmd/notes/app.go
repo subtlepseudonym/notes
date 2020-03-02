@@ -44,7 +44,7 @@ type App struct {
 	setupOnce sync.Once
 
 	logger *zap.Logger
-	data    dal.DAL
+	data   dal.DAL
 	meta   *notes.Meta
 	index  notes.Index
 
