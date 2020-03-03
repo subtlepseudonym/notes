@@ -12,6 +12,7 @@ import (
 	"strconv"
 
 	"github.com/subtlepseudonym/notes"
+	"github.com/subtlepseudonym/notes/dal"
 	"github.com/urfave/cli"
 )
 
@@ -23,7 +24,7 @@ func (a *App) buildDebugCommand() cli.Command {
 		Subcommands: []cli.Command{
 			a.getNote(),
 			a.getMeta(),
-			a.getIndex(),
+			a.getNoteMetas(),
 			a.rebuildIndex(),
 		},
 	}
@@ -113,31 +114,20 @@ func (a *App) getMetaAction(ctx *cli.Context) error {
 	return nil
 }
 
-func (a *App) getIndex() cli.Command {
+func (a *App) getNoteMetas() cli.Command {
 	return cli.Command{
-		Name:        "get-index",
-		Usage:       "print index structure",
-		Description: "Print the contents of the index as a json object",
-		Action:      a.getIndexAction,
-		Flags: []cli.Flag{
-			cli.BoolFlag{
-				Name:  "in-memory",
-				Usage: "get index that's currently in memory",
-			},
-		},
+		Name:        "get-note-metas",
+		Usage:       "print note meta objects for",
+		Description: "Print a map of note IDs to their meta information",
+		Action:      a.getNoteMetasAction,
 	}
 }
 
-func (a *App) getIndexAction(ctx *cli.Context) error {
-	index := a.index
-	if !ctx.Bool("in-memory") {
-		var err error
-		index, err = a.data.GetIndex()
-		if err != nil {
-			return fmt.Errorf("get index from dal: %w", err)
-		}
+func (a *App) getNoteMetasAction(ctx *cli.Context) error {
+	index, err := a.data.GetAllNoteMetas()
+	if err != nil {
+		return fmt.Errorf("get note metas: %w", err)
 	}
-
 	b, err := json.Marshal(index)
 	if err != nil {
 		return fmt.Errorf("marshal index: %w", err)
@@ -154,21 +144,12 @@ func (a *App) rebuildIndex() cli.Command {
 	return cli.Command{
 		Name:        "rebuild-index",
 		Usage:       "rebuild index file",
-		Description: "Create the index file from scratch. This is only useful when use the local DAL",
+		Description: "Rebuild the local DAL index file from scratch",
 		Action:      a.rebuildIndexAction,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
-				Name:  "force",
-				Usage: "rebuild index even if there is no local DAL present in the home directory",
-			},
-			cli.BoolFlag{
 				Name:  "no-backup",
 				Usage: "don't create a backup of the index file before writing to disk",
-			},
-			cli.IntFlag{
-				Name:  "capacity",
-				Usage: "index capacity",
-				Value: 0,
 			},
 		},
 	}
@@ -179,17 +160,9 @@ func (a *App) rebuildIndexAction(ctx *cli.Context) error {
 	a.logger = a.logger.Named("rebuild-index")
 
 	if _, err := os.Stat(notesDir); os.IsNotExist(err) {
-		if !ctx.Bool("force") {
-			return fmt.Errorf("local DAL not found: %w\nuse --force if you'd like to rebuild anyway", err)
-		}
-
-		err = os.Mkdir(notesDir, os.ModeDir|os.FileMode(0700))
-		if err != nil {
-			return fmt.Errorf("create notes directory: %w", err)
-		}
+		return fmt.Errorf("local DAL not found: %w\nuse --force if you'd like to rebuild anyway", err)
 	}
 
-	index := notes.NewIndex(ctx.Int("capacity"))
 	infos, err := ioutil.ReadDir(notesDir)
 	if err != nil {
 		return fmt.Errorf("read notes directory: %w", err)
@@ -200,6 +173,7 @@ func (a *App) rebuildIndexAction(ctx *cli.Context) error {
 		return fmt.Errorf("compile regex: %w", err)
 	}
 
+	index := make(map[int]notes.NoteMeta)
 	for _, info := range infos {
 		if info.IsDir() || !nameRegex.MatchString(info.Name()) {
 			continue
@@ -215,7 +189,7 @@ func (a *App) rebuildIndexAction(ctx *cli.Context) error {
 		var note notes.Note
 		err = json.NewDecoder(noteFile).Decode(&note)
 		if err != nil {
-			a.logger.Error(fmt.Sprintf("decode note: %w", err))
+			a.logger.Error(fmt.Sprintf("decode note: %s", err))
 			noteFile.Close()
 			continue
 		}
@@ -226,7 +200,7 @@ func (a *App) rebuildIndexAction(ctx *cli.Context) error {
 
 	// FIXME: this will need to be updated if the default index filename is ever changed or
 	// 		  if the option to rename the file is ever provided
-	indexPath := path.Join(a.homeDir, "index")
+	indexPath := path.Join(a.homeDir, defaultNotesDirectory, "index")
 	backupIndex := !ctx.Bool("no-backup")
 	if backupIndex {
 		err := os.Rename(indexPath, indexPath+".rebuild.bak")
@@ -256,12 +230,11 @@ func (a *App) rebuildIndexAction(ctx *cli.Context) error {
 		return fmt.Errorf("close index file: %w", err)
 	}
 
-	if backupIndex {
-		err = os.Remove(indexPath + ".rebuild.bak")
-		if err != nil {
-			return fmt.Errorf("remove index backup: %w", err)
-		}
+	local, err := dal.NewLocal(defaultNotesDirectory, a.meta.Version)
+	if err != nil {
+		return fmt.Errorf("new local dal: %w", err)
 	}
+	a.data = local
 
 	return nil
 }

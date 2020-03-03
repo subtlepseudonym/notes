@@ -3,8 +3,8 @@
 ## [2.0.0] -
 ### Added
 - Caching for note retrieval
-- Debug command for getting index object
-- Debug command for rebuilding index
+- Debug command for getting NoteMeta objects
+- Debug command for rebuilding local DAL index
 - Separate 'notebooks' for partitioning notes
 - Direct access to NoteMeta objects through DAL
 

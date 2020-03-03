@@ -68,7 +68,7 @@ func getNoteID(meta *notes.Meta, data dal.DAL, arg string, searchDepth int) (int
 	} else {
 		index, err := data.GetAllNoteMetas()
 		if err != nil {
-			return 0, fmt.Errorf("get all note metas: %v", err)
+			return 0, fmt.Errorf("get note metas: %v", err)
 		}
 
 		for i := 0; i < searchDepth; i++ {
