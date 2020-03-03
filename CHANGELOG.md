@@ -6,10 +6,11 @@
 - Debug command for getting index object
 - Debug command for rebuilding index
 - Separate 'notebooks' for partitioning notes
+- Direct access to NoteMeta objects through DAL
 
 ### Changed
 - Rename notes/dal package dalpkg to dal
-- Index note meta information separately from overall meta
+- Index note meta information separately from overall meta in local DAL
 - Stop using mitchellh/go-homedir in favor of os.UserHomeDir (introduced in go1.13.7)
 - Rename dal.NewLocalDAL to dal.NewLocal
 
