@@ -29,7 +29,7 @@ format fmt:
 clean:
 	go mod tidy
 	go clean
-	rm -f $(GOBINARY)
+	rm $(BINARY)
 
 get-tag:
 	echo ${BUILD}
