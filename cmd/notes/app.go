@@ -46,7 +46,6 @@ type App struct {
 	logger *zap.Logger
 	data   dal.DAL
 	meta   *notes.Meta
-	index  notes.Index
 
 	inInteractive bool
 }
@@ -151,12 +150,6 @@ func (a *App) setup(ctx *cli.Context) error {
 	default:
 		a.data = data
 	}
-
-	index, err := data.GetIndex()
-	if err != nil {
-		return fmt.Errorf("get index: %v", err)
-	}
-	a.index = index
 
 	meta, err := data.GetMeta()
 	if err != nil {

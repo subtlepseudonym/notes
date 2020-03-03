@@ -81,13 +81,6 @@ func (a *App) watchAndUpdate(ctx *cli.Context, note *notes.Note, filename string
 				return fmt.Errorf("save note: %w", err)
 			}
 			logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
-
-			a.index[note.Meta.ID] = note.Meta
-			err = a.data.SaveIndex(a.index)
-			if err != nil {
-				return fmt.Errorf("save index: %w", err)
-			}
-			logger.Info("index updated", zap.Int("length", len(a.index)))
 		}
 	}
 

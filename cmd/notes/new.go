@@ -62,8 +62,13 @@ func (a *App) buildNewCommand() cli.Command {
 func (a *App) newAction(ctx *cli.Context) error {
 	logger := a.logger.Named(ctx.Command.Name)
 
+	index, err := a.data.GetAllNoteMetas()
+	if err != nil {
+		return fmt.Errorf("get note metas: %v", err)
+	}
+
 	newNoteID := a.meta.LatestID + 1
-	_, exists := a.index[newNoteID]
+	_, exists := index[newNoteID]
 	if exists {
 		return fmt.Errorf("note ID: must be unique")
 	}
@@ -109,13 +114,6 @@ func (a *App) newAction(ctx *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("get meta size: %w", err)
 	}
-
-	a.index[note.Meta.ID] = note.Meta
-	err = a.data.SaveIndex(a.index)
-	if err != nil {
-		return fmt.Errorf("save index: %w", err)
-	}
-	logger.Info("index updated", zap.Int("length", len(a.index)))
 
 	a.meta.Size = metaSize
 	err = a.data.SaveMeta(a.meta)

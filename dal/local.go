@@ -2,6 +2,7 @@ package dal
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -17,6 +18,7 @@ const (
 	defaultIndexFilename      = "index"
 	defaultNoteFilenameFormat = "%06d"
 	noteFilenameRegex         = `[0-9]{6}`
+	defaultIndexCapacity      = 256
 )
 
 type local struct {
@@ -26,6 +28,8 @@ type local struct {
 	indexFilename      string
 	metaFilename       string
 	noteFilenameFormat string
+
+	indexes map[string]map[int]notes.NoteMeta // map notebook name to map of IDs to NoteMeta
 }
 
 // NewLocal initializes a DAL with the default options
@@ -59,10 +63,10 @@ func NewLocal(dirName, version string) (DAL, error) {
 		return nil, fmt.Errorf("stat meta: %v", err)
 	}
 
-	indexPath := path.Join(baseDirectory, defaultIndexFilename)
-	_, err = os.Stat(indexPath)
-	if os.IsNotExist(err) {
-		err = buildIndex(baseDirectory, "", defaultIndexFilename)
+	var index map[int]notes.NoteMeta
+	index, err = loadIndex(path.Join(baseDirectory, defaultIndexFilename))
+	if errors.Is(err, os.ErrNotExist) {
+		index, err = buildIndex(baseDirectory, "")
 		if err != nil {
 			return nil, fmt.Errorf("build index: %v", err)
 		}
@@ -75,6 +79,7 @@ func NewLocal(dirName, version string) (DAL, error) {
 		metaFilename:       defaultMetaFilename,
 		indexFilename:      defaultIndexFilename,
 		noteFilenameFormat: defaultNoteFilenameFormat,
+		indexes:            map[string]map[int]notes.NoteMeta{"": index},
 	}, nil
 }
 
@@ -144,10 +149,11 @@ func (d *local) CreateNotebook(name string) error {
 		return fmt.Errorf("make notebook directory: %v", err)
 	}
 
-	err = buildIndex(d.baseDirectory, name, defaultIndexFilename)
+	index, err := buildIndex(d.baseDirectory, name)
 	if err != nil {
 		return fmt.Errorf("build index: %v", err)
 	}
+	d.indexes[name] = index
 
 	return nil
 }
@@ -189,60 +195,32 @@ func (d *local) RemoveNotebook(name string, recursive bool) error {
 	return os.Remove(notebookPath)
 }
 
-func (d *local) GetIndex() (notes.Index, error) {
+func (d *local) GetNoteMeta(id int) (*notes.NoteMeta, error) {
 	d.Lock()
 	defer d.Unlock()
 
-	indexPath := path.Join(d.baseDirectory, d.notebook, d.indexFilename)
-	indexFile, err := os.Open(indexPath)
-	if err != nil {
-		return nil, fmt.Errorf("open index file: %v", err)
+	index, ok := d.indexes[d.notebook]
+	if !ok {
+		return nil, fmt.Errorf("notebook %s index not found", d.notebook)
 	}
 
-	var index notes.Index
-	err = json.NewDecoder(indexFile).Decode(&index)
-	if err != nil {
-		indexFile.Close()
-		return nil, fmt.Errorf("decode index file: %v", err)
+	noteMeta, ok := index[id]
+	if !ok {
+		return nil, fmt.Errorf("note meta not in index")
 	}
-
-	err = indexFile.Close()
-	if err != nil {
-		return index, fmt.Errorf("close index file: %v", err)
-	}
-	return index, nil
+	return &noteMeta, nil
 }
 
-func (d *local) SaveIndex(index notes.Index) error {
+func (d *local) GetAllNoteMetas() (map[int]notes.NoteMeta, error) {
 	d.Lock()
 	defer d.Unlock()
 
-	indexPath := path.Join(d.baseDirectory, d.notebook, d.indexFilename)
-	err := os.Rename(indexPath, indexPath+".bak")
-	if err != nil {
-		return fmt.Errorf("backup index file: %v", err)
-	}
-	// TODO: remove index backup
-
-	indexFile, err := os.Create(indexPath)
-	if err != nil {
-		err = os.Rename(indexPath+".bak", indexPath)
-		if err != nil {
-			return fmt.Errorf("restore index backup: %v", err)
-		}
+	index, ok := d.indexes[d.notebook]
+	if !ok {
+		return nil, fmt.Errorf("notebook %s index not found", d.notebook)
 	}
 
-	err = json.NewEncoder(indexFile).Encode(index)
-	if err != nil {
-		indexFile.Close()
-		return fmt.Errorf("encode index file: %v", err)
-	}
-
-	err = indexFile.Close()
-	if err != nil {
-		return fmt.Errorf("close index file: %v", err)
-	}
-	return nil
+	return index, nil
 }
 
 func (d *local) getNotePath(id int) (string, error) {
@@ -301,6 +279,13 @@ func (d *local) SaveNote(note *notes.Note) error {
 	if err != nil {
 		return fmt.Errorf("close note file: %v", err)
 	}
+
+	index, ok := d.indexes[d.notebook]
+	if !ok {
+		return fmt.Errorf("notebook %s index not found", d.notebook)
+	}
+	index[note.Meta.ID] = note.Meta
+
 	return nil
 }
 
@@ -318,6 +303,12 @@ func (d *local) RemoveNote(id int) error {
 	if err != nil {
 		return fmt.Errorf("remove note file: %v", err)
 	}
+
+	index, ok := d.indexes[d.notebook]
+	if !ok {
+		return fmt.Errorf("notebook %s index not found", d.notebook)
+	}
+	delete(index, id)
 
 	return nil
 }
@@ -364,14 +355,14 @@ func buildMeta(baseDirectory, filename, version string) error {
 	return nil
 }
 
-func buildIndex(baseDirectory, notebook, filename string) error {
+func buildIndex(baseDirectory, notebook string) (map[int]notes.NoteMeta, error) {
 	notebookPath := path.Join(baseDirectory, notebook)
 	infos, err := ioutil.ReadDir(notebookPath)
 	if err != nil {
-		return fmt.Errorf("read notes directory: %v", err)
+		return nil, fmt.Errorf("read notes directory: %w", err)
 	}
 
-	index := notes.NewIndex(0) // use default capacity
+	index := make(map[int]notes.NoteMeta, defaultIndexCapacity)
 	nameRegex := regexp.MustCompile(noteFilenameRegex)
 	for _, info := range infos {
 		if info.IsDir() || !nameRegex.MatchString(info.Name()) {
@@ -397,21 +388,69 @@ func buildIndex(baseDirectory, notebook, filename string) error {
 		notefile.Close()
 	}
 
-	indexPath := path.Join(notebookPath, filename)
+	indexPath := path.Join(notebookPath, defaultIndexFilename)
 	indexFile, err := os.Create(indexPath)
 	if err != nil {
-		return fmt.Errorf("create index file: %v", err)
+		return nil, fmt.Errorf("create index file: %w", err)
 	}
 
 	err = json.NewEncoder(indexFile).Encode(index)
 	if err != nil {
 		indexFile.Close()
-		return fmt.Errorf("encode index file: %v", err)
+		return nil, fmt.Errorf("encode index file: %w", err)
 	}
 
 	err = indexFile.Close()
 	if err != nil {
-		return fmt.Errorf("close index file: %v", err)
+		return nil, fmt.Errorf("close index file: %w", err)
+	}
+	return index, nil
+}
+
+func loadIndex(indexPath string) (map[int]notes.NoteMeta, error) {
+	indexFile, err := os.Open(indexPath)
+	if err != nil {
+		return nil, fmt.Errorf("open index file: %w", err)
+	}
+
+	var index map[int]notes.NoteMeta
+	err = json.NewDecoder(indexFile).Decode(&index)
+	if err != nil {
+		indexFile.Close()
+		return nil, fmt.Errorf("decode index file: %w", err)
+	}
+
+	err = indexFile.Close()
+	if err != nil {
+		return nil, fmt.Errorf("close index file: %w", err)
+	}
+	return index, nil
+}
+
+func saveIndex(indexPath string, index map[int]notes.NoteMeta) error {
+	err := os.Rename(indexPath, indexPath+".bak")
+	if err != nil {
+		return fmt.Errorf("backup index file: %w", err)
+	}
+	// TODO: remove index backup
+
+	indexFile, err := os.Create(indexPath)
+	if err != nil {
+		err = os.Rename(indexPath+".bak", indexPath)
+		if err != nil {
+			return fmt.Errorf("restore index backup: %w", err)
+		}
+	}
+
+	err = json.NewEncoder(indexFile).Encode(index)
+	if err != nil {
+		indexFile.Close()
+		return fmt.Errorf("encode index file: %w", err)
+	}
+
+	err = indexFile.Close()
+	if err != nil {
+		return fmt.Errorf("close index file: %w", err)
 	}
 	return nil
 }

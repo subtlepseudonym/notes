@@ -8,14 +8,13 @@ import (
 
 const (
 	defaultEditHistorySize = 16
-	defaultIndexCapacity   = 256
 )
 
 // Meta holds meta information for the local notes storage as a whole
 type Meta struct {
 	Version     string   `json:"version"`
 	OldVersions []string `json:"oldVersions"`
-	LatestID    int      `json:"latestId"`
+	LatestID    int      `json:"latestID"`
 	Size        int      `json:"size"` // meta file size in bytes
 }
 
@@ -60,20 +59,10 @@ func (j *JSONTime) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type Index map[int]NoteMeta
-
-func NewIndex(capacity int) Index {
-	if capacity > 0 {
-		return Index(make(map[int]NoteMeta, capacity))
-	}
-
-	return Index(make(map[int]NoteMeta, defaultIndexCapacity))
-}
-
 // NoteMeta holds meta information for one note to make commands that only access
 // meta information perform faster
 type NoteMeta struct {
-	ID      int           `json:"id"` // incremented starting at 1
+	ID      int           `json:"id"`
 	Title   string        `json:"title"`
 	Created JSONTime      `json:"created"`
 	Deleted JSONTime      `json:"deleted"`

@@ -46,8 +46,6 @@ func (a *App) rmAction(ctx *cli.Context) error {
 		if err != nil {
 			return fmt.Errorf("remove note file: %w", err)
 		}
-
-		delete(a.index, note.Meta.ID)
 	} else {
 		note.Meta.Deleted.Time = time.Now()
 		err = a.data.SaveNote(note)
@@ -55,15 +53,7 @@ func (a *App) rmAction(ctx *cli.Context) error {
 			return fmt.Errorf("save note: %w", err)
 		}
 		logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
-
-		a.index[note.Meta.ID] = note.Meta
 	}
-
-	err = a.data.SaveIndex(a.index)
-	if err != nil {
-		return fmt.Errorf("save index: %w", err)
-	}
-	logger.Info("index updated", zap.Int("length", len(a.index)))
 
 	return nil
 }

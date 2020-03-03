@@ -26,7 +26,7 @@ type NewNoteOptions struct {
 // the body with the provided UpdateBodyFunc
 func NewNote(ctx *Context, options NewNoteOptions, updateBody UpdateBodyFunc) (*Context, error) {
 	newNoteID := ctx.Meta.LatestID + 1
-	if _, ok := ctx.Index[newNoteID]; ok {
+	if _, err := ctx.DAL.GetNoteMeta(newNoteID); err == nil {
 		return ctx, fmt.Errorf("note ID %d (%x) already exists", newNoteID, newNoteID)
 	}
 
@@ -53,12 +53,6 @@ func NewNote(ctx *Context, options NewNoteOptions, updateBody UpdateBodyFunc) (*
 	err = ctx.DAL.SaveNote(note)
 	if err != nil {
 		return ctx, fmt.Errorf("save note: %v", err)
-	}
-
-	ctx.Index[note.Meta.ID] = note.Meta
-	err = ctx.DAL.SaveIndex(ctx.Index)
-	if err != nil {
-		return ctx, fmt.Errorf("save index: %v", err)
 	}
 
 	ctx.Meta.LatestID = note.Meta.ID

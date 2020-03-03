@@ -8,9 +8,8 @@ import (
 )
 
 type Context struct {
-	Meta  *notes.Meta
-	Index notes.Index
-	DAL   dal.DAL
+	Meta *notes.Meta
+	DAL  dal.DAL
 
 	Logger *zap.Logger
 }

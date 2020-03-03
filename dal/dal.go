@@ -7,15 +7,15 @@ import (
 // DAL interfaces the method by which we access the source of
 // Meta and Note objects
 type DAL interface {
+	GetMeta() (*notes.Meta, error)
+	SaveMeta(*notes.Meta) error
+
 	CreateNotebook(string) error
 	SetNotebook(string) error
 	RemoveNotebook(string, bool) error
 
-	GetIndex() (notes.Index, error)
-	SaveIndex(notes.Index) error
-
-	GetMeta() (*notes.Meta, error)
-	SaveMeta(*notes.Meta) error
+	GetNoteMeta(int) (*notes.NoteMeta, error)
+	GetAllNoteMetas() (map[int]notes.NoteMeta, error)
 
 	GetNote(int) (*notes.Note, error)
 	SaveNote(*notes.Note) error
