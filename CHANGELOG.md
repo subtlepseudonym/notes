@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.2.3] -
+### Fixed
+- Prevent meta file falling out of sync when terminal crashes
+
 ## [1.2.2] -
 ### Changed
 - Background updater has more descriptive logging
