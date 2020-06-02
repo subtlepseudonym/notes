@@ -14,6 +14,10 @@
 - Stop using mitchellh/go-homedir in favor of os.UserHomeDir (introduced in go1.13.7)
 - Rename dal.NewLocalDAL to dal.NewLocal
 
+## [1.2.3] - 2020-05-02
+### Fixed
+- Prevent meta file falling out of sync when terminal crashes
+
 ## [1.2.2] - 2019-12-17
 ### Changed
 - Background updater has more descriptive logging
