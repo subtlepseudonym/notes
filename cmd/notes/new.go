@@ -89,7 +89,7 @@ func (a *App) newAction(ctx *cli.Context) error {
 		},
 	}
 	a.meta.LatestID = note.Meta.ID
-	err := a.dal.SaveMeta(a.meta)
+	err = a.data.SaveMeta(a.meta)
 	if err != nil {
 		return fmt.Errorf("save meta: %w", err)
 	}
