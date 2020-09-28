@@ -16,15 +16,14 @@ const (
 
 // NewNoteOptions provides values by which to alter the Note created by NewNote
 type NewNoteOptions struct {
-	Title          string        `json:"title"`
-	DateFormat     string        `json:"dateFormat"`
-	DateLocation   string        `json:"dateLocation"`
-	UpdateInterval time.Duration `json:"updateInterval"`
+	Title        string `json:"title"`
+	DateFormat   string `json:"dateFormat"`
+	DateLocation string `json:"dateLocation"`
 }
 
 // NewNote creates a new note object according to the provided options and populates
 // the body with the provided UpdateBodyFunc
-func NewNote(ctx *Context, options NewNoteOptions, updateBody UpdateBodyFunc) (*Context, error) {
+func NewNote(ctx *Context, options NewNoteOptions) (*Context, error) {
 	newNoteID := ctx.Meta.LatestID + 1
 	if _, err := ctx.DAL.GetNoteMeta(newNoteID); err == nil {
 		return ctx, fmt.Errorf("note ID %d (%x) already exists", newNoteID, newNoteID)
@@ -35,11 +34,6 @@ func NewNote(ctx *Context, options NewNoteOptions, updateBody UpdateBodyFunc) (*
 		title = timestampTitle(ctx, options.DateFormat, options.DateLocation)
 	}
 
-	body, err := updateBody()
-	if err != nil {
-		return ctx, fmt.Errorf("update body: %v", err)
-	}
-
 	note := &notes.Note{
 		Meta: notes.NoteMeta{
 			ID:      newNoteID,
@@ -47,10 +41,9 @@ func NewNote(ctx *Context, options NewNoteOptions, updateBody UpdateBodyFunc) (*
 			Created: notes.JSONTime{time.Now()},
 			Deleted: notes.JSONTime{time.Unix(0, 0)},
 		},
-		Body: body,
 	}
 
-	err = ctx.DAL.SaveNote(note)
+	err := ctx.DAL.SaveNote(note)
 	if err != nil {
 		return ctx, fmt.Errorf("save note: %v", err)
 	}

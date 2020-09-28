@@ -13,5 +13,3 @@ type Context struct {
 
 	Logger *zap.Logger
 }
-
-type UpdateBodyFunc func() (string, error)
