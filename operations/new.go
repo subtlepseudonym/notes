@@ -47,11 +47,12 @@ func NewNote(ctx *Context, options NewNoteOptions) (*Context, error) {
 	if err != nil {
 		return ctx, fmt.Errorf("save note: %v", err)
 	}
+	ctx.Logger.Debug("created new note", zap.Int("noteID", note.Meta.ID))
 
 	ctx.Meta.LatestID = note.Meta.ID
 	metaSize, err := ctx.Meta.ApproxSize()
 	if err != nil {
-		ctx.Logger.Error("Failed to approximate meta size", zap.Error(err))
+		ctx.Logger.Error("failed to approximate meta size", zap.Error(err))
 	} else {
 		ctx.Meta.Size = metaSize
 	}
@@ -75,7 +76,7 @@ func timestampTitle(ctx *Context, format, location string) string {
 	loc, err := time.LoadLocation(location)
 	if err != nil {
 		loc = time.UTC
-		ctx.Logger.Error("Failed to load location, defaulting to UTC", zap.Error(err), zap.String("location", location))
+		ctx.Logger.Error("failed to load location, defaulting to UTC", zap.Error(err), zap.String("location", location))
 	}
 
 	return time.Now().In(loc).Format(format)
