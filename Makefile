@@ -29,7 +29,7 @@ dev-test:
 	gotest --race --count=1 -v -tags "${BUILDTAGS}" ./...
 
 format fmt:
-	go fmt -x ./...
+	gofmt -l -w .
 
 clean:
 	go mod tidy
