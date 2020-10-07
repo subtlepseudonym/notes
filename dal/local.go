@@ -286,6 +286,12 @@ func (d *local) SaveNote(note *notes.Note) error {
 	}
 	index[note.Meta.ID] = note.Meta
 
+	indexPath := path.Join(d.baseDirectory, d.notebook, defaultIndexFilename)
+	err = saveIndex(indexPath, index)
+	if err != nil {
+		return fmt.Errorf("save index: %v", err)
+	}
+
 	return nil
 }
 
@@ -309,6 +315,12 @@ func (d *local) RemoveNote(id int) error {
 		return fmt.Errorf("notebook %s index not found", d.notebook)
 	}
 	delete(index, id)
+
+	indexPath := path.Join(d.baseDirectory, d.notebook, defaultIndexFilename)
+	err = saveIndex(indexPath, index)
+	if err != nil {
+		return fmt.Errorf("save index: %v", err)
+	}
 
 	return nil
 }
@@ -427,6 +439,8 @@ func loadIndex(indexPath string) (map[int]notes.NoteMeta, error) {
 	return index, nil
 }
 
+// FIXME: saveIndex is called with default index path in SaveNote and
+// RemoveNote, which will lead to clobbering when changing notebooks
 func saveIndex(indexPath string, index map[int]notes.NoteMeta) error {
 	err := os.Rename(indexPath, indexPath+".bak")
 	if err != nil {
