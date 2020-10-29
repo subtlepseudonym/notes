@@ -18,7 +18,10 @@ func main() {
 
 	err = app.Run(os.Args)
 	if err != nil {
-		app.logger.Error("Failed to run command", zap.Error(err), zap.Strings("args", os.Args))
+		if app.logger != nil {
+			app.logger.Error("Failed to run command", zap.Error(err), zap.Strings("args", os.Args))
+		}
+
 		fmt.Fprintln(app.ErrWriter, err)
 		os.Exit(1)
 	}
