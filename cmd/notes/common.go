@@ -63,7 +63,7 @@ func (a *App) watchAndUpdate(ctx *cli.Context, note *notes.Note, filename string
 		case timestamp := <-ticker.C:
 			b, err := ioutil.ReadFile(filename)
 			if err != nil {
-				return fmt.Errorf("read file: %w", err) // FIXME: might want to log these rather than returning
+				return fmt.Errorf("read file: %w", err)
 			}
 
 			if bytes.Equal(b, []byte(note.Body)) {

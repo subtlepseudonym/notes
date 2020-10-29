@@ -289,7 +289,7 @@ func (a *App) interactiveMode(ctx *cli.Context) error {
 			return cli.NewExitError(fmt.Errorf("read line: %w", err), 1)
 		}
 
-		if strings.TrimSpace(line) == "exit" {
+		if strings.TrimSpace(line) == config.EOFPrompt {
 			break
 		}
 
