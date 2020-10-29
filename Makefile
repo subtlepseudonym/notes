@@ -17,9 +17,12 @@ all: test build
 build: format
 	go build ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
 
-dev: BUILDTAGS=$(subst $(space),$(comma),$(DEV_BUILDTAGS))
-dev: format
+dev-build: BUILDTAGS=$(subst $(space),$(comma),$(DEV_BUILDTAGS))
+dev-build: format
 	go build -tags "${BUILDTAGS}" ${LDFLAGS} -o ${BINARY} -v ./cmd/notes
+
+docker: format
+	docker build --network=host --tag "${BINARY}:dev-latest" -f Dockerfile .
 
 test:
 	gotest --race -v ./...
