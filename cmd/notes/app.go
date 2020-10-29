@@ -127,12 +127,6 @@ func (a *App) setup(ctx *cli.Context) error {
 	}
 	a.homeDir = home
 
-	logger, err := a.initLogging(ctx)
-	if err != nil {
-		return fmt.Errorf("init logging: %v", err)
-	}
-	a.logger = logger
-
 	data, err := dal.NewLocal(defaultNotesDirectory, Version) // FIXME: option to use different dal
 	if err != nil {
 		return fmt.Errorf("initialize dal: %v", err)
@@ -150,6 +144,12 @@ func (a *App) setup(ctx *cli.Context) error {
 	default:
 		a.data = data
 	}
+
+	logger, err := a.initLogging(ctx)
+	if err != nil {
+		return fmt.Errorf("init logging: %v", err)
+	}
+	a.logger = logger
 
 	meta, err := data.GetMeta()
 	if err != nil {
