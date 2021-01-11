@@ -19,7 +19,7 @@ const (
 func (a *App) buildEditCommand() cli.Command {
 	return cli.Command{
 		Name:        "edit",
-		ShortName:   "e",
+		Aliases:     []string{"e"},
 		Usage:       "edit an existing note",
 		Description: "Open a note for editing, as specified by the <noteID> argument. If no argument is provided, notes will open the most recently created note for editing",
 		ArgsUsage:   "[<noteID>]",

@@ -9,7 +9,7 @@ import (
 func (a *App) buildNotebookCommand() cli.Command {
 	return cli.Command{
 		Name:        "notebook",
-		ShortName:   "nb",
+		Aliases:     []string{"nb"},
 		Usage:       "print current notebook or access notebook subcommands",
 		Description: "Print current notebook or access commands to create, modify, remove, and list available notebooks",
 		Action:      a.notebookAction,
@@ -29,10 +29,10 @@ func (a *App) notebookAction(ctx *cli.Context) error {
 
 func (a *App) createNotebook() cli.Command {
 	return cli.Command{
-		Name:      "new",
-		ShortName: "n",
-		Usage:     "create a new notebook",
-		Action:    a.createNotebookAction,
+		Name:    "new",
+		Aliases: []string{"n"},
+		Usage:   "create a new notebook",
+		Action:  a.createNotebookAction,
 	}
 }
 
@@ -57,10 +57,10 @@ func (a *App) createNotebookAction(ctx *cli.Context) error {
 
 func (a *App) listNotebooks() cli.Command {
 	return cli.Command{
-		Name:      "list",
-		ShortName: "ls",
-		Usage:     "list existing notebooks",
-		Action:    a.listNotebooksAction,
+		Name:    "list",
+		Aliases: []string{"ls"},
+		Usage:   "list existing notebooks",
+		Action:  a.listNotebooksAction,
 	}
 }
 
@@ -96,10 +96,10 @@ func (a *App) setNotebookAction(ctx *cli.Context) error {
 
 func (a *App) renameNotebook() cli.Command {
 	return cli.Command{
-		Name:      "rename",
-		ShortName: "mv",
-		Usage:     "rename notebook",
-		Action:    a.renameNotebookAction,
+		Name:    "rename",
+		Aliases: []string{"mv"},
+		Usage:   "rename notebook",
+		Action:  a.renameNotebookAction,
 	}
 }
 

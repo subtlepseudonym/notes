@@ -17,10 +17,10 @@ const (
 
 func (a *App) buildNewCommand() cli.Command {
 	return cli.Command{
-		Name:      "new",
-		ShortName: "n",
-		Usage:     "create a new note",
-		Action:    a.newAction,
+		Name:    "new",
+		Aliases: []string{"n"},
+		Usage:   "create a new note",
+		Action:  a.newAction,
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "no-watch",
