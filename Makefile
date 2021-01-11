@@ -25,7 +25,7 @@ docker: format
 	docker build --network=host --tag "${BINARY}:dev-latest" -f Dockerfile .
 
 test:
-	gotest --race -v ./...
+	gotest --race ./...
 
 dev-test: BUILDTAGS=$(subst $(space),$(comma),$(DEV_BUILDTAGS))
 dev-test:
