@@ -67,6 +67,12 @@ func (a *App) newAction(ctx *cli.Context) error {
 		return fmt.Errorf("get note metas: %v", err)
 	}
 
+	meta, err := a.data.GetMeta()
+	if err != nil {
+		return fmt.Errorf("get meta: %v", err)
+	}
+	a.meta = meta
+
 	newNoteID := a.meta.LatestID + 1
 	_, exists := index[newNoteID]
 	if exists {

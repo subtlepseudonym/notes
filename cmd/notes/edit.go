@@ -90,6 +90,12 @@ func getNoteID(meta *notes.Meta, data dal.DAL, arg string, searchDepth int) (int
 func (a *App) editAction(ctx *cli.Context) error {
 	logger := a.logger.Named(ctx.Command.Name)
 
+	meta, err := a.data.GetMeta()
+	if err != nil {
+		return fmt.Errorf("get meta: %v", err)
+	}
+	a.meta = meta
+
 	noteID, err := getNoteID(a.meta, a.data, ctx.Args().First(), ctx.Int("latest-depth"))
 	if err != nil {
 		return fmt.Errorf("get note ID: %w", err)
