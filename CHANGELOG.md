@@ -5,7 +5,8 @@
 - Caching for note retrieval
 - Debug command for getting NoteMeta objects
 - Debug command for rebuilding local DAL index
-- Separate 'notebooks' for partitioning notes
+- Separate notebooks for partitioning notes
+- Use the "default" notebook if none is specified
 - Direct access to NoteMeta objects through DAL
 
 ### Changed
