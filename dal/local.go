@@ -29,6 +29,7 @@ type local struct {
 	indexFilename      string
 	metaFilename       string
 	noteFilenameFormat string
+	version            string
 
 	indexes map[string]map[int]notes.NoteMeta // map notebook name to map of IDs to NoteMeta
 }
@@ -55,7 +56,7 @@ func NewLocal(dirName, version string) (DAL, error) {
 	metaPath := path.Join(notebookDirectory, defaultMetaFilename)
 	_, err = os.Stat(metaPath)
 	if os.IsNotExist(err) {
-		err = buildMeta(notebookDirectory, defaultMetaFilename, version)
+		err = buildMeta(baseDirectory, defaultNotebook, version)
 		if err != nil {
 			return nil, fmt.Errorf("build meta: %v", err)
 		}
@@ -84,6 +85,7 @@ func NewLocal(dirName, version string) (DAL, error) {
 		metaFilename:       defaultMetaFilename,
 		indexFilename:      defaultIndexFilename,
 		noteFilenameFormat: defaultNoteFilenameFormat,
+		version:            version,
 		indexes:            indexes,
 	}, nil
 }
@@ -161,6 +163,11 @@ func (d *local) CreateNotebook(name string) error {
 	err := createDirectory(notebookPath)
 	if err != nil {
 		return fmt.Errorf("make notebook directory: %v", err)
+	}
+
+	err = buildMeta(d.baseDirectory, name, d.version)
+	if err != nil {
+		return fmt.Errorf("build meta: %v", err)
 	}
 
 	index, err := buildIndex(d.baseDirectory, name)
@@ -391,8 +398,9 @@ func createDirectory(dirname string) error {
 	return nil
 }
 
-func buildMeta(notebookDirectory, filename, version string) error {
-	metaPath := path.Join(notebookDirectory, filename)
+func buildMeta(baseDirectory, notebook, version string) error {
+	notebookPath := path.Join(baseDirectory, notebook)
+	metaPath := path.Join(notebookPath, defaultMetaFilename)
 	metaFile, err := os.Create(metaPath)
 	if err != nil {
 		return fmt.Errorf("create meta file: %v", err)
