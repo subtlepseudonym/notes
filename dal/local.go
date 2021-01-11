@@ -151,13 +151,6 @@ func (d *local) SaveMeta(meta *notes.Meta) error {
 	return nil
 }
 
-func (d *local) GetNotebook() string {
-	d.Lock()
-	defer d.Unlock()
-
-	return d.notebook
-}
-
 func (d *local) CreateNotebook(name string) error {
 	if name == "" {
 		return fmt.Errorf("notebook name cannot be blank string")
@@ -184,6 +177,25 @@ func (d *local) CreateNotebook(name string) error {
 	d.indexes[name] = index
 
 	return nil
+}
+
+func (d *local) GetNotebook() string {
+	d.Lock()
+	defer d.Unlock()
+
+	return d.notebook
+}
+
+func (d *local) GetAllNotebooks() []string {
+	d.Lock()
+	defer d.Unlock()
+
+	var notebooks []string
+	for notebook := range d.indexes {
+		notebooks = append(notebooks, notebook)
+	}
+
+	return notebooks
 }
 
 func (d *local) SetNotebook(name string) error {

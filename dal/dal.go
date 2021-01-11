@@ -12,6 +12,7 @@ type DAL interface {
 
 	CreateNotebook(string) error
 	GetNotebook() string
+	GetAllNotebooks() []string
 	SetNotebook(string) error
 	RenameNotebook(string, string) error
 	RemoveNotebook(string, bool) error

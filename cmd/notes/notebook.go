@@ -10,11 +10,12 @@ func (a *App) buildNotebookCommand() cli.Command {
 	return cli.Command{
 		Name:        "notebook",
 		ShortName:   "nb",
-		Usage:       "create or modify notebooks",
-		Description: "Create, modify, remove, and list available notebooks",
+		Usage:       "print current notebook or access notebook subcommands",
+		Description: "Print current notebook or access commands to create, modify, remove, and list available notebooks",
 		Action:      a.notebookAction,
 		Subcommands: []cli.Command{
 			a.createNotebook(),
+			a.listNotebooks(),
 			a.setNotebook(),
 			a.renameNotebook(),
 		},
@@ -49,6 +50,23 @@ func (a *App) createNotebookAction(ctx *cli.Context) error {
 	err = a.data.SetNotebook(name)
 	if err != nil {
 		return fmt.Errorf("set notebook: %v", err)
+	}
+
+	return nil
+}
+
+func (a *App) listNotebooks() cli.Command {
+	return cli.Command{
+		Name:      "list",
+		ShortName: "ls",
+		Usage:     "list existing notebooks",
+		Action:    a.listNotebooksAction,
+	}
+}
+
+func (a *App) listNotebooksAction(ctx *cli.Context) error {
+	for _, notebook := range a.data.GetAllNotebooks() {
+		fmt.Fprintln(ctx.App.Writer, notebook)
 	}
 
 	return nil
