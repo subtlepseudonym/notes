@@ -303,6 +303,9 @@ func (d *local) getNotePath(id int) (string, error) {
 
 // GetNote retrieves and decodes a Note from file
 func (d *local) GetNote(id int) (*notes.Note, error) {
+	d.Lock()
+	defer d.Unlock()
+
 	notePath, err := d.getNotePath(id)
 	if err != nil {
 		return nil, fmt.Errorf("get note path: %v", err)
