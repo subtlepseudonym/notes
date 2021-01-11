@@ -40,16 +40,9 @@ func NewLocal(dirName, version string) (DAL, error) {
 	}
 
 	baseDirectory := path.Join(home, dirName)
-	info, err := os.Stat(baseDirectory)
-	if os.IsNotExist(err) {
-		err = os.Mkdir(baseDirectory, os.ModeDir|os.FileMode(0700))
-		if err != nil {
-			return nil, fmt.Errorf("make base directory: %v", err)
-		}
-	} else if err != nil {
-		return nil, fmt.Errorf("stat base directory: %v", err)
-	} else if !info.IsDir() {
-		return nil, fmt.Errorf("%s exists, but is not a directory", baseDirectory)
+	err = createDirectory(baseDirectory)
+	if err != nil {
+		return nil, fmt.Errorf("create base directory: %v", err)
 	}
 
 	metaPath := path.Join(baseDirectory, defaultMetaFilename)
@@ -144,7 +137,7 @@ func (d *local) SaveMeta(meta *notes.Meta) error {
 
 func (d *local) CreateNotebook(name string) error {
 	notebookPath := path.Join(d.baseDirectory, name)
-	err := os.Mkdir(notebookPath, os.ModeDir|os.FileMode(0700))
+	err := createDirectory(notebookPath)
 	if err != nil {
 		return fmt.Errorf("make notebook directory: %v", err)
 	}
@@ -325,14 +318,16 @@ func (d *local) RemoveNote(id int) error {
 	return nil
 }
 
-func createDirIfNotExists(dirname string) error {
+func createDirectory(dirname string) error {
 	info, err := os.Stat(dirname)
 	if os.IsNotExist(err) {
 		return os.Mkdir(dirname, os.ModeDir|os.FileMode(0700))
+	} else if err != nil {
+		return fmt.Errorf("stat directory: %w", err)
 	}
 
 	if !info.IsDir() {
-		return fmt.Errorf("file %s exists, but is not a directory", dirname)
+		return fmt.Errorf("file %q exists, but is not a directory", dirname)
 	}
 
 	return nil
