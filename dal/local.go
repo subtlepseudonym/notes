@@ -159,6 +159,13 @@ func (d *local) GetNotebook() string {
 }
 
 func (d *local) CreateNotebook(name string) error {
+	if name == "" {
+		return fmt.Errorf("notebook name cannot be blank string")
+	}
+
+	d.Lock()
+	defer d.Unlock()
+
 	notebookPath := path.Join(d.baseDirectory, name)
 	err := createDirectory(notebookPath)
 	if err != nil {
@@ -180,6 +187,10 @@ func (d *local) CreateNotebook(name string) error {
 }
 
 func (d *local) SetNotebook(name string) error {
+	if name == "" {
+		return fmt.Errorf("notebook name cannot be blank string")
+	}
+
 	notebookPath := path.Join(d.baseDirectory, name)
 	info, err := os.Stat(notebookPath)
 	if err != nil {
@@ -187,7 +198,7 @@ func (d *local) SetNotebook(name string) error {
 	}
 
 	if !info.IsDir() {
-		return fmt.Errorf("file %s exists, but is not a directory", notebookPath)
+		return fmt.Errorf("file %q exists, but is not a directory", notebookPath)
 	}
 
 	d.Lock()
@@ -235,6 +246,10 @@ func (d *local) RenameNotebook(oldName, newName string) error {
 }
 
 func (d *local) RemoveNotebook(name string, recursive bool) error {
+	if name == "" {
+		return fmt.Errorf("notebook name cannot be blank string")
+	}
+
 	notebookPath := path.Join(d.baseDirectory, name)
 	info, err := os.Stat(notebookPath)
 	if err != nil {
