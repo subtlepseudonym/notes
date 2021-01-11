@@ -149,6 +149,13 @@ func (d *local) SaveMeta(meta *notes.Meta) error {
 	return nil
 }
 
+func (d *local) GetNotebook() string {
+	d.Lock()
+	defer d.Unlock()
+
+	return d.notebook
+}
+
 func (d *local) CreateNotebook(name string) error {
 	notebookPath := path.Join(d.baseDirectory, name)
 	err := createDirectory(notebookPath)
@@ -179,6 +186,43 @@ func (d *local) SetNotebook(name string) error {
 	d.Lock()
 	d.notebook = name
 	d.Unlock()
+
+	return nil
+}
+
+func (d *local) RenameNotebook(oldName, newName string) error {
+	if oldName == "" || newName == "" {
+		return fmt.Errorf("notebook name cannot be blank string")
+	}
+
+	oldNotebookPath := path.Join(d.baseDirectory, oldName)
+	info, err := os.Stat(oldNotebookPath)
+	if err != nil {
+		return fmt.Errorf("stat notebook directory: %v", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("file %q exists, but is not a directory", oldNotebookPath)
+	}
+
+	newNotebookPath := path.Join(d.baseDirectory, newName)
+	info, err = os.Stat(newNotebookPath)
+	if err != nil {
+		return fmt.Errorf("stat notebook directory: %v", err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("file %q exists, but is not a directory", newNotebookPath)
+	}
+
+	d.Lock()
+	defer d.Unlock()
+
+	err = os.Rename(oldNotebookPath, newNotebookPath)
+	if err != nil {
+		return fmt.Errorf("rename notebook directory: %v", err)
+	}
+
+	d.indexes[newName] = d.indexes[oldName]
+	delete(d.indexes, oldName)
 
 	return nil
 }

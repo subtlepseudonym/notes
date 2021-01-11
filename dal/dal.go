@@ -11,7 +11,9 @@ type DAL interface {
 	SaveMeta(*notes.Meta) error
 
 	CreateNotebook(string) error
+	GetNotebook() string
 	SetNotebook(string) error
+	RenameNotebook(string, string) error
 	RemoveNotebook(string, bool) error
 
 	GetNoteMeta(int) (*notes.NoteMeta, error)
