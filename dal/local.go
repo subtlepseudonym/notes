@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	defaultNotebook           = "default"
 	defaultMetaFilename       = "meta"
 	defaultIndexFilename      = "index"
 	defaultNoteFilenameFormat = "%06d"
@@ -45,10 +46,16 @@ func NewLocal(dirName, version string) (DAL, error) {
 		return nil, fmt.Errorf("create base directory: %v", err)
 	}
 
-	metaPath := path.Join(baseDirectory, defaultMetaFilename)
+	notebookDirectory := path.Join(baseDirectory, defaultNotebook)
+	err = createDirectory(notebookDirectory)
+	if err != nil {
+		return nil, fmt.Errorf("create notebook directory: %v", err)
+	}
+
+	metaPath := path.Join(notebookDirectory, defaultMetaFilename)
 	_, err = os.Stat(metaPath)
 	if os.IsNotExist(err) {
-		err = buildMeta(baseDirectory, defaultMetaFilename, version)
+		err = buildMeta(notebookDirectory, defaultMetaFilename, version)
 		if err != nil {
 			return nil, fmt.Errorf("build meta: %v", err)
 		}
@@ -57,9 +64,9 @@ func NewLocal(dirName, version string) (DAL, error) {
 	}
 
 	var index map[int]notes.NoteMeta
-	index, err = loadIndex(path.Join(baseDirectory, defaultIndexFilename))
+	index, err = loadIndex(path.Join(notebookDirectory, defaultIndexFilename))
 	if errors.Is(err, os.ErrNotExist) {
-		index, err = buildIndex(baseDirectory, "")
+		index, err = buildIndex(baseDirectory, defaultNotebook)
 		if err != nil {
 			return nil, fmt.Errorf("build index: %v", err)
 		}
@@ -67,12 +74,17 @@ func NewLocal(dirName, version string) (DAL, error) {
 		return nil, fmt.Errorf("stat index: %v", err)
 	}
 
+	indexes := map[string]map[int]notes.NoteMeta{
+		defaultNotebook: index,
+	}
+
 	return &local{
 		baseDirectory:      path.Join(home, dirName),
+		notebook:           defaultNotebook,
 		metaFilename:       defaultMetaFilename,
 		indexFilename:      defaultIndexFilename,
 		noteFilenameFormat: defaultNoteFilenameFormat,
-		indexes:            map[string]map[int]notes.NoteMeta{"": index},
+		indexes:            indexes,
 	}, nil
 }
 
@@ -81,7 +93,8 @@ func (d *local) GetMeta() (*notes.Meta, error) {
 	d.Lock()
 	defer d.Unlock()
 
-	metaPath := path.Join(d.baseDirectory, d.metaFilename)
+	notebookDirectory := path.Join(d.baseDirectory, d.notebook)
+	metaPath := path.Join(notebookDirectory, d.metaFilename)
 	metaFile, err := os.Open(metaPath)
 	if err != nil {
 		return nil, fmt.Errorf("open meta file: %v", err)
@@ -106,7 +119,8 @@ func (d *local) SaveMeta(meta *notes.Meta) error {
 	d.Lock()
 	defer d.Unlock()
 
-	metaPath := path.Join(d.baseDirectory, d.metaFilename)
+	notebookDirectory := path.Join(d.baseDirectory, d.notebook)
+	metaPath := path.Join(notebookDirectory, d.metaFilename)
 	err := os.Rename(metaPath, metaPath+".bak")
 	if err != nil {
 		return fmt.Errorf("backup old meta file: %v", err)
@@ -194,7 +208,7 @@ func (d *local) GetNoteMeta(id int) (*notes.NoteMeta, error) {
 
 	index, ok := d.indexes[d.notebook]
 	if !ok {
-		return nil, fmt.Errorf("notebook %s index not found", d.notebook)
+		return nil, fmt.Errorf("notebook %q index not found", d.notebook)
 	}
 
 	noteMeta, ok := index[id]
@@ -210,7 +224,7 @@ func (d *local) GetAllNoteMetas() (map[int]notes.NoteMeta, error) {
 
 	index, ok := d.indexes[d.notebook]
 	if !ok {
-		return nil, fmt.Errorf("notebook %s index not found", d.notebook)
+		return nil, fmt.Errorf("notebook %q index not found", d.notebook)
 	}
 
 	return index, nil
@@ -275,7 +289,7 @@ func (d *local) SaveNote(note *notes.Note) error {
 
 	index, ok := d.indexes[d.notebook]
 	if !ok {
-		return fmt.Errorf("notebook %s index not found", d.notebook)
+		return fmt.Errorf("notebook %q index not found", d.notebook)
 	}
 	index[note.Meta.ID] = note.Meta
 
@@ -305,7 +319,7 @@ func (d *local) RemoveNote(id int) error {
 
 	index, ok := d.indexes[d.notebook]
 	if !ok {
-		return fmt.Errorf("notebook %s index not found", d.notebook)
+		return fmt.Errorf("notebook %q index not found", d.notebook)
 	}
 	delete(index, id)
 
@@ -333,13 +347,8 @@ func createDirectory(dirname string) error {
 	return nil
 }
 
-func buildMeta(baseDirectory, filename, version string) error {
-	err := createDirIfNotExists(baseDirectory)
-	if err != nil {
-		return fmt.Errorf("create base directory: %w", err)
-	}
-
-	metaPath := path.Join(baseDirectory, filename)
+func buildMeta(notebookDirectory, filename, version string) error {
+	metaPath := path.Join(notebookDirectory, filename)
 	metaFile, err := os.Create(metaPath)
 	if err != nil {
 		return fmt.Errorf("create meta file: %v", err)

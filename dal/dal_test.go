@@ -24,6 +24,7 @@ func TestNewLocalDAL(t *testing.T) {
 
 	expected := &local{
 		baseDirectory:      path.Join(home, dir),
+		notebook:           defaultNotebook,
 		metaFilename:       defaultMetaFilename,
 		noteFilenameFormat: defaultNoteFilenameFormat,
 	}
