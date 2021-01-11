@@ -98,6 +98,7 @@ func New() (*App, error) {
 
 	app.Commands = []cli.Command{
 		app.buildDebugCommand(),
+		app.buildNotebookCommand(),
 		app.buildListCommand(),
 		app.buildNewCommand(),
 		app.buildRemoveCommand(),
