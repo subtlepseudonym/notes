@@ -6,7 +6,8 @@
 - Debug command for getting NoteMeta objects
 - Debug command for rebuilding local DAL index
 - Separate notebooks for partitioning notes
-- Use the "default" notebook if none is specified
+	- A "default" notebook to be used if none is specified
+	- Commands for managing notebooks
 - Direct access to NoteMeta objects through DAL
 
 ### Changed
