@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 )
 
 func (a *App) buildNotebookCommand() cli.Command {
@@ -52,6 +53,7 @@ func (a *App) createNotebookAction(ctx *cli.Context) error {
 		return fmt.Errorf("set notebook: %v", err)
 	}
 
+	a.logger.Info("notebook created", zap.String("notebook", name))
 	return nil
 }
 
@@ -121,6 +123,12 @@ func (a *App) renameNotebookAction(ctx *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("set notebook: %v", err)
 	}
+
+	a.logger.Info(
+		"renamed notebook",
+		zap.String("from", oldName),
+		zap.String("to", newName),
+	)
 
 	return nil
 }
