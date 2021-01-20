@@ -170,6 +170,8 @@ func (d *local) SaveMeta(meta *notes.Meta) error {
 func (d *local) CreateNotebook(name string) error {
 	if name == "" {
 		return fmt.Errorf("notebook name cannot be blank string")
+	} else if name[0] == '.' {
+		return fmt.Errorf("notebook name cannot start with \".\"")
 	}
 
 	d.Lock()
