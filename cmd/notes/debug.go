@@ -156,9 +156,10 @@ func (a *App) rebuildIndex() cli.Command {
 }
 
 func (a *App) rebuildIndexAction(ctx *cli.Context) error {
-	notesDir := path.Join(a.homeDir, defaultNotesDirectory)
-	a.logger = a.logger.Named("rebuild-index")
+	notebook := a.data.GetNotebook()
+	a.logger = a.logger.Named(notebook).Named("rebuild-index")
 
+	notesDir := path.Join(a.homeDir, defaultNotesDirectory)
 	if _, err := os.Stat(notesDir); os.IsNotExist(err) {
 		return fmt.Errorf("local DAL not found: %w\nuse --force if you'd like to rebuild anyway", err)
 	}

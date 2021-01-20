@@ -60,7 +60,8 @@ func (a *App) buildNewCommand() cli.Command {
 }
 
 func (a *App) newAction(ctx *cli.Context) error {
-	logger := a.logger.Named(ctx.Command.Name)
+	notebook := a.data.GetNotebook()
+	logger := a.logger.Named(notebook).Named(ctx.Command.Name)
 
 	index, err := a.data.GetAllNoteMetas()
 	if err != nil {

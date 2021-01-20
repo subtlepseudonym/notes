@@ -25,7 +25,8 @@ func (a *App) buildRemoveCommand() cli.Command {
 }
 
 func (a *App) rmAction(ctx *cli.Context) error {
-	logger := a.logger.Named(ctx.Command.Name)
+	notebook := a.data.GetNotebook()
+	logger := a.logger.Named(notebook).Named(ctx.Command.Name)
 
 	if !ctx.Args().Present() {
 		return fmt.Errorf("usage: noteID argument required")
