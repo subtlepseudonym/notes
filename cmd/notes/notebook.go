@@ -68,7 +68,7 @@ func (a *App) listNotebooks() cli.Command {
 
 func (a *App) listNotebooksAction(ctx *cli.Context) error {
 	for _, notebook := range a.data.GetAllNotebooks() {
-		fmt.Fprintln(ctx.App.Writer, notebook)
+		fmt.Fprintln(ctx.App.Writer, "  ", notebook)
 	}
 
 	return nil
