@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
@@ -67,7 +68,13 @@ func (a *App) listNotebooks() cli.Command {
 }
 
 func (a *App) listNotebooksAction(ctx *cli.Context) error {
+	var notebooks []string
 	for _, notebook := range a.data.GetAllNotebooks() {
+		notebooks = append(notebooks, notebook)
+	}
+	sort.Strings(notebooks)
+
+	for _, notebook := range notebooks {
 		fmt.Fprintln(ctx.App.Writer, "  ", notebook)
 	}
 
