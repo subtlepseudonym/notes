@@ -64,19 +64,35 @@ func NewLocal(dirName, version string) (DAL, error) {
 		return nil, fmt.Errorf("stat meta: %v", err)
 	}
 
-	var index map[int]notes.NoteMeta
-	index, err = loadIndex(path.Join(notebookDirectory, defaultIndexFilename))
-	if errors.Is(err, os.ErrNotExist) {
-		index, err = buildIndex(baseDirectory, defaultNotebook)
-		if err != nil {
-			return nil, fmt.Errorf("build index: %v", err)
-		}
-	} else if err != nil {
-		return nil, fmt.Errorf("stat index: %v", err)
+	baseDir, err := os.Open(baseDirectory)
+	if err != nil {
+		return nil, fmt.Errorf("stat base directory: %v", err)
 	}
 
-	indexes := map[string]map[int]notes.NoteMeta{
-		defaultNotebook: index,
+	notebookInfos, err := baseDir.Readdir(0)
+	if err != nil {
+		return nil, fmt.Errorf("read base directory contents: %v", err)
+	}
+
+	indexes := make(map[string]map[int]notes.NoteMeta, len(notebookInfos))
+	for _, info := range notebookInfos {
+		notebook := info.Name()
+		if !info.IsDir() || IsHidden(notebook) {
+			continue
+		}
+
+		var index map[int]notes.NoteMeta
+		index, err = loadIndex(path.Join(baseDirectory, notebook, defaultIndexFilename))
+		if errors.Is(err, os.ErrNotExist) {
+			index, err = buildIndex(baseDirectory, notebook)
+			if err != nil {
+				return nil, fmt.Errorf("build index for %q: %v", notebook, err)
+			}
+		} else if err != nil {
+			return nil, fmt.Errorf("stat index for %q: %v", notebook, err)
+		}
+
+		indexes[notebook] = index
 	}
 
 	return &local{
