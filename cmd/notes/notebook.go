@@ -74,9 +74,10 @@ func (a *App) listNotebooksAction(ctx *cli.Context) error {
 
 func (a *App) setNotebook() cli.Command {
 	return cli.Command{
-		Name:   "set",
-		Usage:  "set current notebook",
-		Action: a.setNotebookAction,
+		Name:    "use",
+		Aliases: []string{"set"},
+		Usage:   "set current notebook",
+		Action:  a.setNotebookAction,
 	}
 }
 
