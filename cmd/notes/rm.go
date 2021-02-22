@@ -20,11 +20,22 @@ func (a *App) buildRemoveCommand() cli.Command {
 				Name:  "hard",
 				Usage: "hard delete",
 			},
+			cli.StringFlag{
+				Name:  "notebook",
+				Usage: "specify which notebook to use. If unspecified, will use the default notebook",
+			},
 		},
 	}
 }
 
 func (a *App) rmAction(ctx *cli.Context) error {
+	if ctx.String("notebook") != "" {
+		err := a.data.SetNotebook(ctx.String("notebook"))
+		if err != nil {
+			return fmt.Errorf("set notebook: %w", err)
+		}
+	}
+
 	notebook := a.data.GetNotebook()
 	logger := a.logger.Named(notebook).Named(ctx.Command.Name)
 

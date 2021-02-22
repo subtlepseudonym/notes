@@ -31,6 +31,10 @@ func (a *App) buildNewCommand() cli.Command {
 				Usage: "don't record activity in edit history",
 			},
 			cli.StringFlag{
+				Name:  "notebook",
+				Usage: "specify which notebook to use. If unspecified, will use the default notebook",
+			},
+			cli.StringFlag{
 				Name:  "title, t",
 				Usage: "note title",
 			},
@@ -60,6 +64,13 @@ func (a *App) buildNewCommand() cli.Command {
 }
 
 func (a *App) newAction(ctx *cli.Context) error {
+	if ctx.String("notebook") != "" {
+		err := a.data.SetNotebook(ctx.String("notebook"))
+		if err != nil {
+			return fmt.Errorf("set notebook: %w", err)
+		}
+	}
+
 	notebook := a.data.GetNotebook()
 	logger := a.logger.Named(notebook).Named(ctx.Command.Name)
 

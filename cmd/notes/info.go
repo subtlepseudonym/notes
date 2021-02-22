@@ -21,12 +21,25 @@ func (a *App) buildInfoCommand() cli.Command {
 		Description: "This command gets information about the app binary, the meta file, or specific note files and prints it in a human-friendly format. These are specified by providing no arguments, the \"meta\" argument, or a noteID respectively",
 		ArgsUsage:   "[meta | <noteID>]",
 		Action:      a.infoAction,
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "notebook",
+				Usage: "specify which notebook to use. If unspecified, will use the default notebook",
+			},
+		},
 	}
 }
 
 func (a *App) infoAction(ctx *cli.Context) error {
 	if !ctx.Args().Present() {
 		return printAppInfo(ctx)
+	}
+
+	if ctx.String("notebook") != "" {
+		err := a.data.SetNotebook(ctx.String("notebook"))
+		if err != nil {
+			return fmt.Errorf("set notebook: %w", err)
+		}
 	}
 
 	if ctx.Args().First() == "meta" {

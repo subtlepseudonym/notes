@@ -43,6 +43,10 @@ func (a *App) buildListCommand() cli.Command {
 				Value: defaultListSize,
 			},
 			cli.StringFlag{
+				Name:  "notebook",
+				Usage: "specify which notebook to use. If unspecified, will use the default notebook",
+			},
+			cli.StringFlag{
 				Name:  "time-format",
 				Usage: "format to display timestamps in",
 				Value: defaultListTimeFormat,
@@ -58,6 +62,13 @@ func (a *App) buildListCommand() cli.Command {
 }
 
 func (a *App) lsAction(ctx *cli.Context) error {
+	if ctx.String("notebook") != "" {
+		err := a.data.SetNotebook(ctx.String("notebook"))
+		if err != nil {
+			return fmt.Errorf("set notebook: %w", err)
+		}
+	}
+
 	index, err := a.data.GetAllNoteMetas()
 	if err != nil {
 		return fmt.Errorf("get note metas: %v", err)
