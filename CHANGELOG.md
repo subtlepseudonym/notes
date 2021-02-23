@@ -8,6 +8,7 @@
 - Separate notebooks for partitioning notes
 	- A "default" notebook to be used if none is specified
 	- Commands for managing notebooks
+	- Flags on note commands to specify notebook
 - Direct access to NoteMeta objects through DAL
 
 ### Changed
