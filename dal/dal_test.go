@@ -32,6 +32,13 @@ func TestNewLocalDAL(t *testing.T) {
 	if diff := deep.Equal(dal, expected); diff != nil {
 		t.Error(diff)
 	}
+
+	baseDirectory := path.Join(home, dir)
+	err = os.RemoveAll(baseDirectory)
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
 }
 
 func TestLocalDALGetMeta(t *testing.T) {
