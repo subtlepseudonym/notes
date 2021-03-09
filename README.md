@@ -4,6 +4,6 @@ This project is intended to make it easy to jot down notes and retrieve them in 
 
 ### Development
 
-In order to run the recipes included in the makefile, you'll need to have `vtag` in your PATH. You can get `vtag` by cloning [subtlepseudony/utilities](https://github.com/subtlepseudonym/utilities), running `make build`, and copying `bin/vtag` into your PATH.
+In order to run the recipes included in the makefile, you'll need to have `vtag` in your PATH. You can get `vtag` by cloning [subtlepseudonym/utilities](https://github.com/subtlepseudonym/utilities), running `make build`, and copying `bin/vtag` into your PATH.
 
 You can build the notes binary with `make build`. This will download dependencies and assign some meta information, including version, to the binary. You can then access this info with `notes info` after the build is complete.
