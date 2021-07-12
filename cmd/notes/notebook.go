@@ -101,6 +101,12 @@ func (a *App) setNotebookAction(ctx *cli.Context) error {
 		return fmt.Errorf("set notebook: %v", err)
 	}
 
+	meta, err := a.data.GetMeta()
+	if err != nil {
+		return fmt.Errorf("get meta: %v", err)
+	}
+	a.meta = meta
+
 	return nil
 }
 
