@@ -33,7 +33,13 @@ func (a *App) editNote(ctx *cli.Context, note *notes.Note, logger *zap.Logger) (
 		go func() {
 			err := a.watchAndUpdate(ctx, note, file.Name(), ctx.Duration("update-period"), stop, logger)
 			if err != nil {
-				a.logger.Error("watch and update failed", zap.Error(err), zap.Int("noteID", note.Meta.ID), zap.String("filename", file.Name()))
+				a.logger.Error(
+					"watch and update failed",
+					zap.Error(err),
+					zap.Int("noteID", note.Meta.ID),
+					zap.String("notebook", a.data.GetNotebook()),
+					zap.String("filename", file.Name()),
+				)
 			}
 		}()
 	}
@@ -80,7 +86,11 @@ func (a *App) watchAndUpdate(ctx *cli.Context, note *notes.Note, filename string
 			if err != nil {
 				return fmt.Errorf("save note: %w", err)
 			}
-			logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
+			logger.Info(
+				"note updated",
+				zap.Int("noteID", note.Meta.ID),
+				zap.String("notebook", a.data.GetNotebook()),
+			)
 		}
 	}
 

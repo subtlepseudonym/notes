@@ -131,7 +131,7 @@ func (a *App) newAction(ctx *cli.Context) error {
 		// FIXME: persist the note somewhere if saving it fails
 		return fmt.Errorf("save note: %w", err)
 	}
-	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
+	logger.Info("note updated", zap.Int("noteID", note.Meta.ID), zap.String("notebook", a.data.GetNotebook()))
 
 	metaSize, err := a.meta.ApproxSize()
 	if err != nil {

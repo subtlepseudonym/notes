@@ -47,7 +47,11 @@ func NewNote(ctx *Context, options NewNoteOptions) (*Context, error) {
 	if err != nil {
 		return ctx, fmt.Errorf("save note: %v", err)
 	}
-	ctx.Logger.Debug("created new note", zap.Int("noteID", note.Meta.ID))
+	ctx.Logger.Debug(
+		"created new note",
+		zap.Int("noteID", note.Meta.ID),
+		zap.String("notebook", ctx.DAL.GetNotebook()),
+	)
 
 	ctx.Meta.LatestID = note.Meta.ID
 	metaSize, err := ctx.Meta.ApproxSize()

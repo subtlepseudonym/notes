@@ -26,6 +26,7 @@ func EditNote(ctx *Context, options EditNoteOptions, noteID int) (*Context, erro
 		ctx.Logger.Debug(
 			"restored soft-deleted note",
 			zap.Int("noteID", note.Meta.ID),
+			zap.String("notebook", ctx.DAL.GetNotebook()),
 			zap.Time("deletedAt", note.Meta.Deleted.Time),
 		)
 

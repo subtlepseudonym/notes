@@ -154,7 +154,7 @@ func (a *App) editAction(ctx *cli.Context) error {
 	if err != nil {
 		return fmt.Errorf("save note: %w", err)
 	}
-	logger.Info("note updated", zap.Int("noteID", note.Meta.ID))
+	logger.Info("note updated", zap.Int("noteID", note.Meta.ID), zap.String("notebook", a.data.GetNotebook()))
 
 	return nil
 }
