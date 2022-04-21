@@ -2,12 +2,12 @@ package dal
 
 import (
 	"fmt"
-	"strings"
-	"os"
 	"io"
+	"os"
+	"path"
+	"strings"
 	"testing"
 	"time"
-	"path"
 
 	"github.com/subtlepseudonym/notes"
 
@@ -46,6 +46,7 @@ func TestLocalCreateNote(t *testing.T) {
 	localDAL, err := NewLocal(noteDir)
 	if err != nil {
 		t.Error(err)
+		t.FailNow()
 	}
 
 	now := time.Now()
@@ -58,39 +59,44 @@ func TestLocalCreateNote(t *testing.T) {
 	tags := []string{"test", "tags", "медведь"}
 
 	note := notes.Note{
-		ID: id,
-		Title: title,
-		Body: body,
+		ID:        id,
+		Title:     title,
+		Body:      body,
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
-		Tags: tags,
+		Tags:      tags,
 	}
 
 	err = localDAL.CreateNote(&note)
 	if err != nil {
 		t.Error(err)
+		t.FailNow()
 	}
 
 	notePath := path.Join(noteDir, id)
 	noteFile, err := os.Open(notePath)
 	if err != nil {
 		t.Error(err)
+		t.FailNow()
 	}
 	defer noteFile.Close()
 
 	readBody, err := io.ReadAll(noteFile)
 	if err != nil {
 		t.Error(err)
+		t.FailNow()
 	}
 
 	if string(readBody) != body {
 		t.Errorf("unexpected note body: %q != %q", string(readBody), body)
+		t.FailNow()
 	}
 
 	metaPath := path.Join(noteDir, fmt.Sprintf("%s.meta", id))
 	metaFile, err := os.Open(metaPath)
 	if err != nil {
 		t.Error(err)
+		t.FailNow()
 	}
 	defer metaFile.Close()
 
@@ -98,6 +104,7 @@ func TestLocalCreateNote(t *testing.T) {
 	_, err = toml.NewDecoder(metaFile).Decode(&readMeta)
 	if err != nil {
 		t.Error(err)
+		t.FailNow()
 	}
 
 	if readMeta.ID != id {
