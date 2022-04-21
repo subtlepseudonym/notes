@@ -107,10 +107,10 @@ func TestLocalCreateNote(t *testing.T) {
 		t.Errorf("unexpected title: %q != %q", readMeta.Title, title)
 	}
 	if !readMeta.CreatedAt.Equal(createdAt) {
-		t.Errorf("unexpected createdAt: %q != %q", readMeta.CreatedAt, createdAt)
+		t.Errorf("unexpected createdAt: %s != %s", readMeta.CreatedAt, createdAt)
 	}
 	if !readMeta.UpdatedAt.Equal(updatedAt) {
-		t.Errorf("unexpected updatedAt: %q != %q", readMeta.UpdatedAt, updatedAt)
+		t.Errorf("unexpected updatedAt: %s != %s", readMeta.UpdatedAt, updatedAt)
 	}
 
 	readMetaTags := strings.Join(readMeta.Tags, ",")
