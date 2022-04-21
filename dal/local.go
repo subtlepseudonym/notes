@@ -3,11 +3,12 @@ package dal
 import (
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/subtlepseudonym/notes"
 
@@ -16,30 +17,30 @@ import (
 
 // meta is an internal representation of non-body notes.Note fields
 type meta struct {
-	ID string `toml:"id"`
-	Title string `toml:"title"`
+	ID        string    `toml:"id"`
+	Title     string    `toml:"title"`
 	CreatedAt time.Time `toml:"created_at"`
 	UpdatedAt time.Time `toml:"updated_at"`
-	Tags []string `toml:"tags"`
+	Tags      []string  `toml:"tags"`
 }
 
 func noteToMeta(note *notes.Note) meta {
 	return meta{
-		ID: note.ID,
-		Title: note.Title,
+		ID:        note.ID,
+		Title:     note.Title,
 		CreatedAt: note.CreatedAt,
 		UpdatedAt: note.UpdatedAt,
-		Tags: note.Tags,
+		Tags:      note.Tags,
 	}
 }
 
 func metaToNote(m meta) notes.Note {
 	return notes.Note{
-		ID: m.ID,
-		Title: m.Title,
+		ID:        m.ID,
+		Title:     m.Title,
 		CreatedAt: m.CreatedAt,
 		UpdatedAt: m.UpdatedAt,
-		Tags: m.Tags,
+		Tags:      m.Tags,
 	}
 }
 
@@ -50,7 +51,7 @@ type local struct {
 
 func NewLocal(directory string) (DAL, error) {
 	err := os.Mkdir(directory, os.ModeDir|os.FileMode(0700))
-	if err != nil {
+	if err != nil && !errors.Is(err, fs.ErrExist) {
 		return nil, fmt.Errorf("make directory: %w", err)
 	}
 
@@ -118,27 +119,27 @@ func (d *local) ReadNote(id string) (*notes.Note, error) {
 	notePath := path.Join(d.root, id)
 	noteFile, err := os.Open(notePath)
 	if err != nil {
-		return fmt.Errorf("open note file: %w", err)
+		return nil, fmt.Errorf("open note file: %w", err)
 	}
 	defer noteFile.Close()
 
 	b, err := io.ReadAll(noteFile)
 	if err != nil {
-		return fmt.Errorf("read note file: %w", err)
+		return nil, fmt.Errorf("read note file: %w", err)
 	}
 	body := string(b)
 
 	metaPath := path.Join(d.root, fmt.Sprintf("%s.meta", id))
-	metaFile, err := os.Open(notePath)
+	metaFile, err := os.Open(metaPath)
 	if err != nil {
-		return fmt.Errorf("open meta file: %w", err)
+		return nil, fmt.Errorf("open meta file: %w", err)
 	}
 	defer metaFile.Close()
 
 	var noteMeta meta
-	err = toml.NewDecoder(metaFile).Decode(&noteMeta)
+	_, err = toml.NewDecoder(metaFile).Decode(&noteMeta)
 	if err != nil {
-		return fmt.Errorf("decode meta file: %w", err)
+		return nil, fmt.Errorf("decode meta file: %w", err)
 	}
 
 	note := metaToNote(noteMeta)

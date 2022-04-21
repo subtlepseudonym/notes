@@ -5,10 +5,10 @@ import (
 )
 
 type Note struct {
-	ID string
-	Title string
-	Body string
+	ID        string
+	Title     string
+	Body      string
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Tags []string
+	Tags      []string
 }
