@@ -121,6 +121,91 @@ func TestLocalCreateNote(t *testing.T) {
 }
 
 func TestLocalReadNote(t *testing.T) {
+	tmpDir := t.TempDir()
+	noteDir := path.Join(tmpDir, "notes")
+
+	localDAL, err := NewLocal(noteDir)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	localDAL, err = NewLocal(noteDir)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	now := time.Now()
+
+	id := "00QBTG0FERFTCCNFISUBO489DI"
+	title := "Test note"
+	body := "Testing notes with text"
+	createdAt := now
+	updatedAt := now.Add(time.Minute)
+	tags := []string{"lots", "of", "tags"}
+
+	notePath := path.Join(noteDir, id)
+	noteFile, err := os.Create(notePath)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	_, err = noteFile.WriteString(body)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	metaPath := path.Join(noteDir, fmt.Sprintf("%s.meta", id))
+	metaFile, err := os.Create(metaPath)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	m := meta{
+		ID:        id,
+		Title:     title,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
+		Tags:      tags,
+	}
+
+	err = toml.NewEncoder(metaFile).Encode(&m)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	note, err := localDAL.ReadNote(id)
+	if err != nil {
+		t.Error()
+		t.FailNow()
+	}
+
+	if note.ID != id {
+		t.Errorf("unexpected id: %q != %q", note.ID, id)
+	}
+	if note.Title != title {
+		t.Errorf("unexpected title: %q != %q", note.Title, title)
+	}
+	if note.Body != body {
+		t.Errorf("unexpected body: %q != %q", note.Body, body)
+	}
+	if !note.CreatedAt.Equal(createdAt) {
+		t.Errorf("unexpected createdAt: %s != %s", note.CreatedAt, createdAt)
+	}
+	if !note.UpdatedAt.Equal(updatedAt) {
+		t.Errorf("unexpected updatedAt: %s != %s", note.UpdatedAt, updatedAt)
+	}
+
+	expectedTags := strings.Join(tags, ",")
+	actualTags := strings.Join(note.Tags, ",")
+	if actualTags != expectedTags {
+		t.Errorf("unexpected tags: %q != %q", actualTags, expectedTags)
+	}
 }
 
 func TestLocalUpdateNote(t *testing.T) {
