@@ -60,58 +60,6 @@ func NewLocal(directory string) (DAL, error) {
 	}, nil
 }
 
-func (d *local) CreateNote(note *notes.Note) error {
-	d.Lock()
-	defer d.Unlock()
-
-	// safely create note file
-	notePath := path.Join(d.root, note.ID)
-	info, err := os.Stat(notePath)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("stat file: %w", err)
-	}
-
-	if info != nil {
-		return fmt.Errorf("file already exists: %s", info.Name())
-	}
-
-	noteFile, err := os.Create(notePath)
-	if err != nil {
-		return fmt.Errorf("create file: %w", err)
-	}
-	defer noteFile.Close()
-
-	_, err = noteFile.WriteString(note.Body)
-	if err != nil {
-		return fmt.Errorf("write body: %w", err)
-	}
-
-	// safely create metadata file
-	metaPath := path.Join(d.root, fmt.Sprintf("%s.meta", note.ID))
-	info, err = os.Stat(metaPath)
-	if err != nil && !errors.Is(err, fs.ErrNotExist) {
-		return fmt.Errorf("stat meta file: %w", err)
-	}
-
-	if info != nil {
-		return fmt.Errorf("meta file already exists: %s", info.Name())
-	}
-
-	metaFile, err := os.Create(metaPath)
-	if err != nil {
-		return fmt.Errorf("create meta file: %w", err)
-	}
-	defer metaFile.Close()
-
-	noteMeta := noteToMeta(note)
-	err = toml.NewEncoder(metaFile).Encode(noteMeta)
-	if err != nil {
-		return fmt.Errorf("write meta: %w", err)
-	}
-
-	return nil
-}
-
 func (d *local) ReadNote(id string) (*notes.Note, error) {
 	d.RLock()
 	defer d.RUnlock()

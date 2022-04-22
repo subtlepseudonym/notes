@@ -5,8 +5,7 @@ import (
 )
 
 type DAL interface {
-	CreateNote(*notes.Note) error
 	ReadNote(string) (*notes.Note, error)
-	UpdateNote(string, *notes.Note) (*notes.Note, error)
+	WriteNote(*notes.Note) error
 	DeleteNote(string) error
 }
