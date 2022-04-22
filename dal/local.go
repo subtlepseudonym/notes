@@ -96,11 +96,46 @@ func (d *local) ReadNote(id string) (*notes.Note, error) {
 	return &note, nil
 }
 
-func (d *local) UpdateNote(id string, note *notes.Note) (*notes.Note, error) {
+func (d *local) WriteNote(note *notes.Note) error {
 	d.Lock()
 	defer d.Unlock()
 
-	return nil, nil
+	notePath := path.Join(d.root, note.ID)
+	err := os.Rename(notePath, fmt.Sprintf("%s.bak", notePath))
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("back up note file: %w", err)
+	}
+
+	metaPath := path.Join(d.root, fmt.Sprintf("%s.meta", note.ID))
+	err = os.Rename(metaPath, fmt.Sprintf("%s.bak", metaPath))
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("back up meta file: %w", err)
+	}
+
+	noteFile, err := os.Create(notePath)
+	if err != nil {
+		return fmt.Errorf("create file: %w", err)
+	}
+	defer noteFile.Close()
+
+	_, err = noteFile.WriteString(note.Body)
+	if err != nil {
+		return fmt.Errorf("write body: %w", err)
+	}
+
+	metaFile, err := os.Create(metaPath)
+	if err != nil {
+		return fmt.Errorf("create meta file: %w", err)
+	}
+	defer metaFile.Close()
+
+	noteMeta := noteToMeta(note)
+	err = toml.NewEncoder(metaFile).Encode(noteMeta)
+	if err != nil {
+		return fmt.Errorf("write meta: %w", err)
+	}
+
+	return nil
 }
 
 func (d *local) DeleteNote(id string) error {

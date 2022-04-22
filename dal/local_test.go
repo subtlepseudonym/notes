@@ -39,94 +39,6 @@ func TestNewLocal(t *testing.T) {
 	}
 }
 
-func TestLocalCreateNote(t *testing.T) {
-	tmpDir := t.TempDir()
-	noteDir := path.Join(tmpDir, "notes")
-
-	localDAL, err := NewLocal(noteDir)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	now := time.Now()
-
-	id := "82ed62cf-fa24-43cd-8468-1877ef20858f"
-	title := "Test Note"
-	body := "This is a test note body"
-	createdAt := now
-	updatedAt := now.Add(time.Minute)
-	tags := []string{"test", "tags", "медведь"}
-
-	note := notes.Note{
-		ID:        id,
-		Title:     title,
-		Body:      body,
-		CreatedAt: createdAt,
-		UpdatedAt: updatedAt,
-		Tags:      tags,
-	}
-
-	err = localDAL.CreateNote(&note)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	notePath := path.Join(noteDir, id)
-	noteFile, err := os.Open(notePath)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	defer noteFile.Close()
-
-	readBody, err := io.ReadAll(noteFile)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	if string(readBody) != body {
-		t.Errorf("unexpected note body: %q != %q", string(readBody), body)
-		t.FailNow()
-	}
-
-	metaPath := path.Join(noteDir, fmt.Sprintf("%s.meta", id))
-	metaFile, err := os.Open(metaPath)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-	defer metaFile.Close()
-
-	var readMeta meta
-	_, err = toml.NewDecoder(metaFile).Decode(&readMeta)
-	if err != nil {
-		t.Error(err)
-		t.FailNow()
-	}
-
-	if readMeta.ID != id {
-		t.Errorf("unexpected id: %q != %q", readMeta.ID, id)
-	}
-	if readMeta.Title != title {
-		t.Errorf("unexpected title: %q != %q", readMeta.Title, title)
-	}
-	if !readMeta.CreatedAt.Equal(createdAt) {
-		t.Errorf("unexpected createdAt: %s != %s", readMeta.CreatedAt, createdAt)
-	}
-	if !readMeta.UpdatedAt.Equal(updatedAt) {
-		t.Errorf("unexpected updatedAt: %s != %s", readMeta.UpdatedAt, updatedAt)
-	}
-
-	readMetaTags := strings.Join(readMeta.Tags, ",")
-	expectedTags := strings.Join(tags, ",")
-	if readMetaTags != expectedTags {
-		t.Errorf("unexpected tags: %q != %q", readMetaTags, expectedTags)
-	}
-}
-
 func TestLocalReadNote(t *testing.T) {
 	tmpDir := t.TempDir()
 	noteDir := path.Join(tmpDir, "notes")
@@ -212,6 +124,94 @@ func TestLocalReadNote(t *testing.T) {
 	actualTags := strings.Join(note.Tags, ",")
 	if actualTags != expectedTags {
 		t.Errorf("unexpected tags: %q != %q", actualTags, expectedTags)
+	}
+}
+
+func TestLocalWriteNote(t *testing.T) {
+	tmpDir := t.TempDir()
+	noteDir := path.Join(tmpDir, "notes")
+
+	localDAL, err := NewLocal(noteDir)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	now := time.Now()
+
+	id := "82ed62cf-fa24-43cd-8468-1877ef20858f"
+	title := "Test Note"
+	body := "This is a test note body"
+	createdAt := now
+	updatedAt := now.Add(time.Minute)
+	tags := []string{"test", "tags", "медведь"}
+
+	note := notes.Note{
+		ID:        id,
+		Title:     title,
+		Body:      body,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
+		Tags:      tags,
+	}
+
+	err = localDAL.WriteNote(&note)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	notePath := path.Join(noteDir, id)
+	noteFile, err := os.Open(notePath)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	defer noteFile.Close()
+
+	readBody, err := io.ReadAll(noteFile)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	if string(readBody) != body {
+		t.Errorf("unexpected note body: %q != %q", string(readBody), body)
+		t.FailNow()
+	}
+
+	metaPath := path.Join(noteDir, fmt.Sprintf("%s.meta", id))
+	metaFile, err := os.Open(metaPath)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	defer metaFile.Close()
+
+	var readMeta meta
+	_, err = toml.NewDecoder(metaFile).Decode(&readMeta)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	if readMeta.ID != id {
+		t.Errorf("unexpected id: %q != %q", readMeta.ID, id)
+	}
+	if readMeta.Title != title {
+		t.Errorf("unexpected title: %q != %q", readMeta.Title, title)
+	}
+	if !readMeta.CreatedAt.Equal(createdAt) {
+		t.Errorf("unexpected createdAt: %s != %s", readMeta.CreatedAt, createdAt)
+	}
+	if !readMeta.UpdatedAt.Equal(updatedAt) {
+		t.Errorf("unexpected updatedAt: %s != %s", readMeta.UpdatedAt, updatedAt)
+	}
+
+	readMetaTags := strings.Join(readMeta.Tags, ",")
+	expectedTags := strings.Join(tags, ",")
+	if readMetaTags != expectedTags {
+		t.Errorf("unexpected tags: %q != %q", readMetaTags, expectedTags)
 	}
 }
 
