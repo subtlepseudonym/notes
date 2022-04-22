@@ -215,8 +215,5 @@ func TestLocalWriteNote(t *testing.T) {
 	}
 }
 
-func TestLocalUpdateNote(t *testing.T) {
-}
-
 func TestLocalDeleteNote(t *testing.T) {
 }
