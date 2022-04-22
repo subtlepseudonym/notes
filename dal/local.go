@@ -138,9 +138,35 @@ func (d *local) WriteNote(note *notes.Note) error {
 	return nil
 }
 
-func (d *local) DeleteNote(id string) error {
+func (d *local) DeleteNote(id string, hard bool) error {
 	d.Lock()
 	defer d.Unlock()
+
+	notePath := path.Join(d.root, id)
+	err := os.Remove(notePath)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("remove note file: %w", err)
+	}
+
+	if hard {
+		err = os.Remove(fmt.Sprintf("%s.bak", notePath))
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("remove backup note file: %w", err)
+		}
+	}
+
+	metaPath := path.Join(d.root, fmt.Sprintf("%s.meta", id))
+	err = os.Remove(metaPath)
+	if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("remove meta file: %w", err)
+	}
+
+	if hard {
+		err = os.Remove(fmt.Sprintf("%s.bak", metaPath))
+		if err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("remove backup meta file: %w", err)
+		}
+	}
 
 	return nil
 }

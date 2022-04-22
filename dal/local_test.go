@@ -1,8 +1,10 @@
 package dal
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path"
 	"strings"
@@ -216,4 +218,97 @@ func TestLocalWriteNote(t *testing.T) {
 }
 
 func TestLocalDeleteNote(t *testing.T) {
+	tmpDir := t.TempDir()
+	noteDir := path.Join(tmpDir, "notes")
+
+	localDAL, err := NewLocal(noteDir)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	localDAL, err = NewLocal(noteDir)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	now := time.Now()
+
+	id := "00QBTG0FERFTCCNFISUBO489DI"
+	title := "DELETE me"
+	body := "A big note that's taking up too much space"
+	createdAt := now
+	updatedAt := now.Add(time.Minute)
+	tags := []string{"whoa", "man"}
+
+	notePath := path.Join(noteDir, id)
+	noteFile, err := os.Create(notePath)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	_, err = noteFile.WriteString(body)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	metaPath := path.Join(noteDir, fmt.Sprintf("%s.meta", id))
+	metaFile, err := os.Create(metaPath)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	m := meta{
+		ID:        id,
+		Title:     title,
+		CreatedAt: createdAt,
+		UpdatedAt: updatedAt,
+		Tags:      tags,
+	}
+
+	err = toml.NewEncoder(metaFile).Encode(&m)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	// soft delete
+	err = localDAL.DeleteNote(id, false)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	_, err = os.Stat(notePath)
+	if !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("note file still exists")
+	}
+
+	_, err = os.Stat(metaPath)
+	if !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("meta file still exists")
+	}
+
+	// hard delete
+	err = localDAL.DeleteNote(id, true)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+
+	noteBackupPath := fmt.Sprintf("%s.bak", notePath)
+	_, err = os.Stat(noteBackupPath)
+	if !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("backup note file still exists")
+	}
+
+	metaBackupPath := fmt.Sprintf("%s.bak", metaPath)
+	_, err = os.Stat(metaBackupPath)
+	if !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("backup meta file still exists")
+	}
 }

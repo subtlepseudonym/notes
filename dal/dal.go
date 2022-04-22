@@ -7,5 +7,5 @@ import (
 type DAL interface {
 	ReadNote(string) (*notes.Note, error)
 	WriteNote(*notes.Note) error
-	DeleteNote(string) error
+	DeleteNote(string, bool) error
 }
