@@ -13,7 +13,7 @@ import (
 
 	"github.com/subtlepseudonym/notes"
 
-	"github.com/BurntSushi/toml"
+	"gopkg.in/yaml.v3"
 )
 
 func TestNewLocal(t *testing.T) {
@@ -94,7 +94,7 @@ func TestLocalReadNote(t *testing.T) {
 		Tags:      tags,
 	}
 
-	err = toml.NewEncoder(metaFile).Encode(&m)
+	err = yaml.NewEncoder(metaFile).Encode(&m)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -191,7 +191,7 @@ func TestLocalWriteNote(t *testing.T) {
 	defer metaFile.Close()
 
 	var readMeta meta
-	_, err = toml.NewDecoder(metaFile).Decode(&readMeta)
+	_, err = yaml.NewDecoder(metaFile).Decode(&readMeta)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
@@ -270,7 +270,7 @@ func TestLocalDeleteNote(t *testing.T) {
 		Tags:      tags,
 	}
 
-	err = toml.NewEncoder(metaFile).Encode(&m)
+	err = yaml.NewEncoder(metaFile).Encode(&m)
 	if err != nil {
 		t.Error(err)
 		t.FailNow()

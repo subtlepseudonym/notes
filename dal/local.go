@@ -12,16 +12,16 @@ import (
 
 	"github.com/subtlepseudonym/notes"
 
-	"github.com/BurntSushi/toml"
+	"gopkg.in/yaml.v3"
 )
 
 // meta is an internal representation of non-body notes.Note fields
 type meta struct {
-	ID        string    `toml:"id"`
-	Title     string    `toml:"title"`
-	CreatedAt time.Time `toml:"created_at"`
-	UpdatedAt time.Time `toml:"updated_at"`
-	Tags      []string  `toml:"tags"`
+	ID        string    `yaml:"id"`
+	Title     string    `yaml:"title"`
+	CreatedAt time.Time `yaml:"created_at"`
+	UpdatedAt time.Time `yaml:"updated_at"`
+	Tags      []string  `yaml:"tags"`
 }
 
 func noteToMeta(note *notes.Note) meta {
@@ -85,7 +85,7 @@ func (d *local) ReadNote(id string) (*notes.Note, error) {
 	defer metaFile.Close()
 
 	var noteMeta meta
-	_, err = toml.NewDecoder(metaFile).Decode(&noteMeta)
+	_, err = yaml.NewDecoder(metaFile).Decode(&noteMeta)
 	if err != nil {
 		return nil, fmt.Errorf("decode meta file: %w", err)
 	}
@@ -130,7 +130,7 @@ func (d *local) WriteNote(note *notes.Note) error {
 	defer metaFile.Close()
 
 	noteMeta := noteToMeta(note)
-	err = toml.NewEncoder(metaFile).Encode(noteMeta)
+	err = yaml.NewEncoder(metaFile).Encode(noteMeta)
 	if err != nil {
 		return fmt.Errorf("write meta: %w", err)
 	}
