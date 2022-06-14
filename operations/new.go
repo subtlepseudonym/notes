@@ -10,7 +10,7 @@ import (
 	"github.com/scru128/go-scru128"
 )
 
-func NewNote(dal dal.DAL, title string, tags []string) (*notes.Note, error) {
+func NewNote(data dal.DAL, title string, tags []string) (*notes.Note, error) {
 	now := time.Now()
 
 	if title == "" {
@@ -25,7 +25,7 @@ func NewNote(dal dal.DAL, title string, tags []string) (*notes.Note, error) {
 		Tags: tags,
 	}
 
-	err := dal.WriteNote(&note)
+	err := data.WriteNote(&note)
 	if err != nil {
 		return nil, fmt.Errorf("write note: %w", err)
 	}
