@@ -1,13 +1,18 @@
 package operations
 
 import (
+	"time"
+
+	"github.com/subtlepseudonym/notes"
+	"github.com/subtlepseudonym/notes/dal"
 )
 
-func EditNoteBody(dal dal.DAL, id, body string) (*notes.Note, error) {
-}
+// EditNote updates a note, defined by the given ID, as updates arrive on the given channel
+func EditNote(data dal.DAL, note *notes.Note) (*notes.Note, error) {
+	note.UpdatedAt = time.Now()
 
-func EditNoteTitle(dal dal.DAL, id, title string) (*notes.Note, error) {
-}
-
-func EditNoteTags(dal dal.DAL, id string, tags []string) (*notes.Note, error) {
+	err := data.WriteNote(note)
+	if err != nil {
+		return note, fmt.Errorf("write note: %w", err)
+	}
 }
