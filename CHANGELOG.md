@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.0.0] -
+## [2.0.0] - 2021-07-18
 ### Added
 - Caching for note retrieval
 - Debug command for getting NoteMeta objects
