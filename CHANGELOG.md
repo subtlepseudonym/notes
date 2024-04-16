@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.1] - 2024-04-16
+### Fixed
+- Debug rebuilding of index respects notebooks
+
 ## [2.0.0] - 2021-07-18
 ### Added
 - Caching for note retrieval

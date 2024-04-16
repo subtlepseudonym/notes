@@ -159,7 +159,7 @@ func (a *App) rebuildIndexAction(ctx *cli.Context) error {
 	notebook := a.data.GetNotebook()
 	a.logger = a.logger.Named(notebook).Named("rebuild-index")
 
-	notesDir := path.Join(a.homeDir, defaultNotesDirectory)
+	notesDir := path.Join(a.homeDir, defaultNotesDirectory, notebook)
 	if _, err := os.Stat(notesDir); os.IsNotExist(err) {
 		return fmt.Errorf("local DAL not found: %w\nuse --force if you'd like to rebuild anyway", err)
 	}
@@ -201,7 +201,7 @@ func (a *App) rebuildIndexAction(ctx *cli.Context) error {
 
 	// FIXME: this will need to be updated if the default index filename is ever changed or
 	// 		  if the option to rename the file is ever provided
-	indexPath := path.Join(a.homeDir, defaultNotesDirectory, "index")
+	indexPath := path.Join(a.homeDir, defaultNotesDirectory, notebook, "index")
 	backupIndex := !ctx.Bool("no-backup")
 	if backupIndex {
 		err := os.Rename(indexPath, indexPath+".rebuild.bak")
