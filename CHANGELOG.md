@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.0.2] - 2024-05-02
+### Fixed
+- Use of the notebook flag is scoped only to the current command
+- List command correctly updates cached meta object
+
 ## [2.0.1] - 2024-04-16
 ### Fixed
 - Debug rebuilding of index respects notebooks

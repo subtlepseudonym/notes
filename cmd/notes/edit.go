@@ -92,14 +92,15 @@ func getNoteID(meta *notes.Meta, data dal.DAL, arg string, searchDepth int) (int
 }
 
 func (a *App) editAction(ctx *cli.Context) error {
+	notebook := a.data.GetNotebook()
+
 	if ctx.String("notebook") != "" {
+		defer a.data.SetNotebook(notebook)
 		err := a.data.SetNotebook(ctx.String("notebook"))
 		if err != nil {
 			return fmt.Errorf("set notebook: %w", err)
 		}
 	}
-
-	notebook := a.data.GetNotebook()
 	logger := a.logger.Named(notebook).Named(ctx.Command.Name)
 
 	meta, err := a.data.GetMeta()

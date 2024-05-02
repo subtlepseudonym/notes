@@ -63,6 +63,8 @@ func (a *App) buildListCommand() cli.Command {
 
 func (a *App) lsAction(ctx *cli.Context) error {
 	if ctx.String("notebook") != "" {
+		notebook := a.data.GetNotebook()
+		defer a.data.SetNotebook(notebook)
 		err := a.data.SetNotebook(ctx.String("notebook"))
 		if err != nil {
 			return fmt.Errorf("set notebook: %w", err)
@@ -82,9 +84,14 @@ func (a *App) lsAction(ctx *cli.Context) error {
 	padAmount := int(math.Log(float64(len(index)))/math.Log(16.0) + 1.0)
 	idFormat := fmt.Sprintf(" %%%dx", padAmount)
 
-	var listed int
+	meta, err := a.data.GetMeta()
+	if err != nil {
+		return fmt.Errorf("get meta: %v", err)
+	}
+	a.meta = meta
 	idx := a.meta.LatestID
 
+	var listed int
 	var noteList []string
 	for listed < limit && idx >= 0 {
 		note, exists := index[idx]

@@ -29,14 +29,15 @@ func (a *App) buildRemoveCommand() cli.Command {
 }
 
 func (a *App) rmAction(ctx *cli.Context) error {
+	notebook := a.data.GetNotebook()
+
 	if ctx.String("notebook") != "" {
+		defer a.data.SetNotebook(notebook)
 		err := a.data.SetNotebook(ctx.String("notebook"))
 		if err != nil {
 			return fmt.Errorf("set notebook: %w", err)
 		}
 	}
-
-	notebook := a.data.GetNotebook()
 	logger := a.logger.Named(notebook).Named(ctx.Command.Name)
 
 	if !ctx.Args().Present() {
