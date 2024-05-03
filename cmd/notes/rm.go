@@ -30,15 +30,25 @@ func (a *App) buildRemoveCommand() cli.Command {
 
 func (a *App) rmAction(ctx *cli.Context) error {
 	notebook := a.data.GetNotebook()
+	logger := a.logger.Named(notebook).Named(ctx.Command.Name)
 
 	if ctx.String("notebook") != "" {
-		defer a.data.SetNotebook(notebook)
+		defer func() {
+			a.data.SetNotebook(notebook)
+
+			meta, err := a.data.GetMeta()
+			if err != nil {
+				logger.Error("get meta", zap.Error(err))
+				return
+			}
+			a.meta = meta
+		}()
+
 		err := a.data.SetNotebook(ctx.String("notebook"))
 		if err != nil {
 			return fmt.Errorf("set notebook: %w", err)
 		}
 	}
-	logger := a.logger.Named(notebook).Named(ctx.Command.Name)
 
 	if !ctx.Args().Present() {
 		return fmt.Errorf("usage: noteID argument required")

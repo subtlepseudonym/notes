@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.0.3] - 2024-05-03
+### Fixed
+- Fixed bug with in-memory meta object with mismatched notbook versions
+
 ## [2.0.2] - 2024-05-02
 ### Fixed
 - Use of the notebook flag is scoped only to the current command

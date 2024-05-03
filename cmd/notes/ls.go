@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/urfave/cli"
+	"go.uber.org/zap"
 )
 
 const (
@@ -64,7 +65,19 @@ func (a *App) buildListCommand() cli.Command {
 func (a *App) lsAction(ctx *cli.Context) error {
 	if ctx.String("notebook") != "" {
 		notebook := a.data.GetNotebook()
-		defer a.data.SetNotebook(notebook)
+		logger := a.logger.Named(notebook).Named(ctx.Command.Name)
+
+		defer func() {
+			a.data.SetNotebook(notebook)
+
+			meta, err := a.data.GetMeta()
+			if err != nil {
+				logger.Error("get meta", zap.Error(err))
+				return
+			}
+			a.meta = meta
+		}()
+
 		err := a.data.SetNotebook(ctx.String("notebook"))
 		if err != nil {
 			return fmt.Errorf("set notebook: %w", err)
