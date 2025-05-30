@@ -42,4 +42,4 @@ clean:
 get-tag:
 	echo ${BUILD}
 
-.PHONY: all build dev-build test format fmt clean get-tag
+.PHONY: all build dev-build test dev-test format fmt clean get-tag
